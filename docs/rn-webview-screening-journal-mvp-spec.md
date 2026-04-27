@@ -52,6 +52,7 @@ React Native 앱 셸(최소 네이티브) 위에 Next.js WebView 앱을 탑재�
   - 앱 실행/복귀 시 링크를 WebView로 전달
 - 로컬 보안 저장
   - 인증 관련 민감값(예: refresh token, device binding key) 저장
+  - 앱 콜드 스타트 시 저장된 인증값을 웹 초기 핸드셰이크로 1회 전달
   - 일반 UI 상태는 저장 금지
 - WebView 브리지
   - 웹 요청을 검증 후 네이티브 API 실행
@@ -66,17 +67,29 @@ React Native 앱 셸(최소 네이티브) 위에 Next.js WebView 앱을 탑재�
 - `SCHEDULE_REMINDER`: `{ atIso: string, type: 'journal' | 'rescreen' }`
 - `OPEN_CRISIS_CALL`: `{ locale: string }`
 - `OPEN_EXTERNAL_URL`: `{ url: string }`
+  - 허용 스킴: `https` 전용
+  - 차단 스킴: `javascript:`, `intent:`, `file:`, `data:`, `about:`, `mailto:`, `tel:`
+  - 허용 도메인: `APP_EXTERNAL_URL_ALLOWLIST`에 정의된 도메인만 허용(정확 매치 또는 하위 도메인)
+  - 정책 위반 시 RN은 즉시 거절하고 `BRIDGE_POLICY_VIOLATION` 오류를 반환
 
 #### RN -> Web
+- `AUTH_BOOTSTRAP`: `{ refreshToken?: string, status: 'ok' | 'empty' | 'error' }`
 - `DEEP_LINK_RECEIVED`: `{ path: string, query?: Record<string,string> }`
 - `PUSH_OPENED`: `{ type: string, payload?: unknown }`
 - `NETWORK_STATUS`: `{ online: boolean }`
 - `APP_STATE_CHANGED`: `{ state: 'active' | 'background' }`
+- `AUTH_LOGOUT_SYNC`: `{ reason: 'user_logout' | 'token_revoked' }`
 
 ### 3.4 인증 주체
 - 인증은 WebView(Next.js) 주도
 - RN은 보안 저장소 I/O 및 브리지 수행만 담당
 - 세션 만료/갱신 판단은 웹 로직이 담당
+
+### 3.5 인증 부트스트랩/동기화 규칙
+1. 앱 콜드 스타트에서 WebView 준비 직후 RN은 보안 저장소를 읽어 `AUTH_BOOTSTRAP`를 1회 전송한다.
+2. `status = ok`이면 웹이 세션 갱신을 시도하고, 갱신 성공 시 최신 `refreshToken`을 `AUTH_SAVE_SECURE`로 재저장한다.
+3. `status = empty` 또는 `status = error`이면 웹은 비로그인 상태로 진입한다. `error`는 재로그인 안내 토스트를 노출한다.
+4. 웹 로그아웃 시 `AUTH_CLEAR_SECURE`를 호출하고, RN 저장소 삭제 완료 후 `AUTH_LOGOUT_SYNC`를 전송해 상태를 동기화한다.
 
 ## 4) WebView 앱 기술 명세 (고정)
 
@@ -120,6 +133,7 @@ React Native 앱 셸(최소 네이티브) 위에 Next.js WebView 앱을 탑재�
 - 서버 경계
   - `POST /api/auth/login`: 웹 로그인/세션 발급
   - `POST /api/screening/submissions`: PHQ-9 + 보조 문항 제출
+    - 입력 스키마 고정: `Q1..Q9` + `D1..D9` (모두 필수, `D9`는 `yes/no`)
   - `GET /api/screening/history`: 과거 선별 이력 조회
   - `GET /api/journal/entries?date=YYYY-MM-DD`: 일기 목록/단일일 조회
   - `POST /api/journal/entries`: 일기 저장/수정
@@ -183,6 +197,8 @@ React Native 앱 셸(최소 네이티브) 위에 Next.js WebView 앱을 탑재�
 - `D6` 특정 스트레스 사건 연관 (yes/no)
 - `D7` 기능저하 정도 (`none/mild/moderate/severe`)
 - `D8` 현재 안전감 여부 (`safe/unsafe`)  
+- `D9` 자해 계획/최근 시도 추가 응답 (yes/no)
+- 제출 검증 규칙: `Q1..Q9`, `D1..D9` 미응답이 하나라도 있으면 제출 거절
 
 ### 6.3 문항 매핑 표
 
@@ -199,6 +215,7 @@ React Native 앱 셸(최소 네이티브) 위에 Next.js WebView 앱을 탑재�
 | `D6` | 사건 촉발 | 스트레스/애도 지원 리소스 강조 |
 | `D7` | 기능 저하 | 권고 행동 강도 조정 |
 | `D8` | 현재 안전성 | 즉시 위기 대응 여부 결정 |
+| `D9` | 자해 계획/최근 시도 | 위기 확정 오버라이드 |
 
 ## 7) 점수화/조건 분기 규칙
 
@@ -212,21 +229,24 @@ React Native 앱 셸(최소 네이티브) 위에 Next.js WebView 앱을 탑재�
   - `20~27`: 높음(중증)
 
 ### 7.2 위험도 최종 단계
+0. 위험 신호 상태(`signalState`)를 먼저 계산
+- `crisis`: `D8 = unsafe` 또는 `Q9 >= 2` 또는 `D9 = yes`
+- `warning`: `Q9 = 1` 이고 `D8 = safe` 이고 `D9 = no`
+- `none`: 그 외
+
 1. `위기(Crisis)`
-- `D8 = unsafe` 이거나
-- `Q9 >= 2` 이거나
-- 자해 계획/최근 시도 추가 응답이 `yes`인 경우
+- `signalState = crisis`
 
 2. `높음(High)`
 - `total >= 15`, 또는
-- `Q9 = 1`, 또는
-- `D7 = severe`
+- `D7 = severe`, 또는
+- `signalState = warning`
 
 3. `중간(Medium)`
 - `total 5~14` 이고 위기/높음 조건 없음
 
 4. `낮음(Low)`
-- `total 0~4` 이고 `Q9 = 0` 및 `D8 = safe`
+- `total 0~4` 이고 `signalState = none` 및 `D8 = safe`
 
 ### 7.3 결과 레벨별 안내
 
@@ -245,8 +265,9 @@ React Native 앱 셸(최소 네이티브) 위에 Next.js WebView 앱을 탑재�
 
 ### 8.2 위기 대응 플로우(필수)
 1. 트리거
-- `Q9 >= 1` 또는 `D8 = unsafe` 응답 시 즉시 위기 배너 표시
-- 위기 확정 조건 충족 시 결과 화면 대신 위기 화면 우선 노출
+- `warning` 트리거: `Q9 = 1` 응답 시 즉시 경고 배너 표시(위기 화면 전환 없음)
+- `crisis` 트리거: `Q9 >= 2` 또는 `D8 = unsafe` 또는 `D9 = yes` 응답 시 즉시 위기 배너 표시
+- 전환 규칙: `signalState = crisis`이면 결과 화면 대신 위기 화면 우선 노출, `signalState = warning`이면 문항은 계속 진행하고 결과 화면에서 High CTA를 고정 노출
 
 2. 위기 화면 구성
 - 상단 경고 문구(비판단적, 짧고 명확)
@@ -331,3 +352,26 @@ React Native 앱 셸(최소 네이티브) 위에 Next.js WebView 앱을 탑재�
   - 대응: `D3` 기반 감별 필요 플래그 및 전문평가 권고
 - 리스크: 접근성 미흡으로 문항 이탈
   - 대응: 대형 터치 타깃, 명확한 라벨, 모션축소 대응
+
+## 13) 판정 엔진 공통 테스트 기준(Web/API 공통)
+
+### 13.1 정규 테스트 매트릭스(최소)
+
+| 케이스 | 입력 핵심 | 예상 `signalState` | 예상 최종 레벨 | 예상 UI/CTA |
+|---|---|---|---|---|
+| `T01` | `total=4, Q9=0, D8=safe, D9=no` | `none` | `Low` | 일반 결과 + 4주 재측정 |
+| `T02` | `total=5, Q9=0, D8=safe, D9=no` | `none` | `Medium` | 중간 권장 행동 |
+| `T03` | `total=9, Q9=0, D8=safe, D9=no` | `none` | `Medium` | 중간 권장 행동 |
+| `T04` | `total=10, Q9=0, D8=safe, D9=no` | `none` | `Medium` | 중간 권장 행동 |
+| `T05` | `total=14, Q9=0, D8=safe, D9=no` | `none` | `Medium` | 중간 권장 행동 |
+| `T06` | `total=15, Q9=0, D8=safe, D9=no` | `none` | `High` | High CTA 고정 |
+| `T07` | `total=2, Q9=1, D8=safe, D9=no` | `warning` | `High` | 경고 배너 + High CTA, 위기 화면 미전환 |
+| `T08` | `total=2, Q9=2, D8=safe, D9=no` | `crisis` | `Crisis` | 위기 화면 즉시 전환 |
+| `T09` | `total=0, Q9=0, D8=unsafe, D9=no` | `crisis` | `Crisis` | 위기 화면 즉시 전환 |
+| `T10` | `total=0, Q9=0, D8=safe, D9=yes` | `crisis` | `Crisis` | 위기 화면 즉시 전환 |
+| `T11` | `D9` 누락(기타 정상) | 계산 불가 | 제출 거절 | 검증 에러 노출(저장/전송 금지) |
+| `T12` | `total=18, Q9=2, D8=safe, D9=no` | `crisis` | `Crisis` | Crisis 우선(High 결과 화면 금지) |
+
+### 13.2 테스트 실행 규칙
+- Web 판정 로직과 API 판정 로직은 위 `T01~T12` 입력셋을 동일하게 사용해야 한다.
+- 릴리스 전 체크: Web과 API의 케이스별 `signalState`, `level`, `CTA`가 1:1 일치해야 한다.
