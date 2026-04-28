@@ -1,0 +1,22 @@
+.DS_Store
+
+# Node
+node_modules
+.next
+dist
+build
+coverage
+
+# React Native
+android/.gradle
+android/app/build
+ios/build
+
+# Java / Kotlin
+.gradle
+server/build
+
+# Env
+.env
+.env.local
+.env.*.local

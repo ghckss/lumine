@@ -1,0 +1,17 @@
+/node_modules
+/android/.gradle
+/android/app/build
+/ios/build
+/coverage
+
+# Bundler
+/metro-cache
+
+# Env
+.env
+.env.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
