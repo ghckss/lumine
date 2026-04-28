@@ -8,9 +8,10 @@ type AppShellProps = {
   title: string;
   description: string;
   children: ReactNode;
+  secondary?: ReactNode;
 };
 
-export function AppShell({ eyebrow, title, description, children }: AppShellProps) {
+export function AppShell({ eyebrow, title, description, children, secondary }: AppShellProps) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const displayName = useAuthStore((state) => state.displayName);
   const greeting = isAuthenticated && displayName ? `${displayName}님` : eyebrow;
@@ -42,6 +43,7 @@ export function AppShell({ eyebrow, title, description, children }: AppShellProp
       <section className="rounded-[32px] border border-white/55 bg-[rgba(252,249,255,0.9)] p-4 shadow-[0_18px_80px_rgba(62,45,116,0.12)] backdrop-blur-xl sm:p-5">
         <div className="grid gap-4">{children}</div>
       </section>
+      {secondary ? <div className="pt-2">{secondary}</div> : null}
     </main>
   );
 }
