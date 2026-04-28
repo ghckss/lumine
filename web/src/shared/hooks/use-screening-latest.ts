@@ -3,9 +3,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/shared/lib/api";
 
-export function useJournalEntry(date: string) {
+export function useScreeningLatest() {
   return useQuery({
-    queryKey: ["journal-entry", date],
-    queryFn: () => api.getJournalEntry(date)
+    queryKey: ["screening-latest"],
+    queryFn: api.getLatestScreening
   });
 }

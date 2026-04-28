@@ -1,4 +1,16 @@
-# 마음 상태 확인 + 감정 일기 MVP 개발 문서
+# lumine MVP 개발 문서
+
+## 0. 브랜딩과 디자인 시스템
+- 제품명은 `lumine`예요.
+- 슬로건은 `lumis eterne - 당신의 영원한 빛`이에요.
+- 시각 시스템 기준은 `docs/designs.md`에 정의된 `Moonlight Sanctuary`예요.
+- 웹과 앱은 `docs/designs.md`의 토큰을 공통 기준으로 맞춰야 해요.
+  - primary: `#67558C`
+  - primary-container: `#B19CD9`
+  - secondary-container: `#E1E1F5`
+  - background: `#FAF8FF`
+  - on-surface: `#1A1B21`
+  - depth: `backdrop blur + ambient shadow + inner glow border`
 
 ## 1. 시스템 개요
 - 앱은 React Native 셸 위에 WebView 기반 웹 앱을 올리는 구조로 구현해요.

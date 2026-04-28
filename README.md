@@ -1,12 +1,26 @@
-# Melancholy
+# lumine
 
-문서 기준 MVP 스캐폴드 구조입니다.
+**lumis eterne - 당신의 영원한 빛**
 
-디렉터리:
+## 당신의 우울이 별이 되는 곳, Lumine
+
+밤이 깊을수록 별은 더 선명하게 빛납니다.  
+우리 마음속의 우울도 사실은 당신이 가진 가장 깊은 빛일지도 몰라요.
+
+Lumine은 당신에게 `빨리 나아지라`고 재촉하지 않습니다.  
+그저 오늘 하루 당신이 머물렀던 감정의 궤적을  
+은은한 라벤더 빛으로 감싸 안아줄 뿐입니다.
+
+사라지지 않는 영원한 마음의 빛, **Lumis Eterne**.  
+오늘 당신의 조각난 마음들을 이곳에 가만히 내려놓으세요.
+
+## Structure
+
 - `server/`: Spring Boot + Kotlin API 서버
-- `web/`: Next.js WebView 앱
+- `web/`: Next.js 기반 웹 앱
 - `app/`: React Native 셸
 
-현재 상태:
-- 문서 기반 최소 구조만 생성되어 있어요.
-- 의존성 설치와 실행 스크립트 검증은 아직 하지 않았어요.
+## Notes
+
+- 현재 저장소는 제품 기획, 디자인, 웹, 서버 작업이 함께 진행 중인 상태입니다.
+- 디자인 톤앤매너는 `lumis eterne` 브랜딩과 [`docs/designs.md`](docs/designs.md) 기준의 `Moonlight Sanctuary` 디자인 시스템으로 정리합니다.

@@ -1,11 +1,16 @@
-export function formatKoreanDate(date: string) {
-  return new Intl.DateTimeFormat("ko-KR", {
-    month: "long",
-    day: "numeric",
-    weekday: "short"
-  }).format(new Date(date));
+export function getTodayDate() {
+  return new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Asia/Seoul"
+  }).format(new Date());
 }
 
-export function getTodayDate() {
-  return new Date().toISOString().slice(0, 10);
+export function formatKoreanDate(date: string) {
+  const target = new Date(`${date}T00:00:00+09:00`);
+  return new Intl.DateTimeFormat("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "long",
+    timeZone: "Asia/Seoul"
+  }).format(target);
 }
