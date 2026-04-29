@@ -37,6 +37,8 @@
 - Zustand
 - TanStack Query
 - Tailwind CSS
+- Docker image 배포 전제
+- 장기적으로 서버 컴포넌트, streaming, SSR 대응 전제
 
 ### 2.3 앱
 - React Native
@@ -44,6 +46,15 @@
 - 네이티브 보안 저장소
 - 푸시 알림
 - 딥링크 처리
+
+### 2.4 배포와 운영
+- `web`용 Dockerfile을 만들어요.
+- `server`용 Dockerfile을 만들어요.
+- `web`, `server` 이미지를 `ECR`에 배포해요.
+- 운영 오케스트레이션은 AWS `EKS` 기준으로 구성해요.
+- `web`은 `Next.js 서버 런타임`으로 운영해요.
+- 정적 asset은 `S3`에 분리 업로드해요.
+- 상세 작업은 `docs/infrastructure-spec.md`를 기준으로 맞춰요.
 
 ## 3. 인증과 가입
 ### 3.1 인증 정책
