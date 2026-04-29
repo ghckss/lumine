@@ -17,6 +17,15 @@ export default function ScreeningQuestionsPage() {
   const currentSectionTitle = questionnaire?.sections.find((section) => section.items.some((item) => item.id === currentItem?.id))?.title;
   const isLast = currentIndex === items.length - 1;
 
+  function goToPrevious() {
+    if (currentIndex > 0) {
+      setCurrentIndex((value) => value - 1);
+      return;
+    }
+
+    router.push("/screening/start");
+  }
+
   async function handleNext() {
     if (!currentItem) {
       return;
@@ -35,21 +44,44 @@ export default function ScreeningQuestionsPage() {
     router.push(result.requiresSafetyPrompt ? "/support?source=safety" : "/screening/result");
   }
 
+  async function handleSelectOption(value: string) {
+    if (!currentItem || submitScreening.isPending) {
+      return;
+    }
+
+    const nextAnswers = { ...answers, [currentItem.id]: value };
+    setAnswers(nextAnswers);
+
+    if (!isLast) {
+      setCurrentIndex((index) => index + 1);
+      return;
+    }
+
+    const result = await submitScreening.mutateAsync({ answers: nextAnswers });
+    router.push(result.requiresSafetyPrompt ? "/support?source=safety" : "/screening/result");
+  }
+
   return (
     <div className="relative mx-auto flex min-h-screen max-w-md flex-col overflow-x-hidden bg-background">
       <div className="fixed left-0 top-0 z-50 h-[2px] w-full bg-surfaceContainerHigh">
         <div className="h-full bg-primary/30 transition-all" style={{ width: `${items.length > 0 ? ((currentIndex + 1) / items.length) * 100 : 0}%` }} />
       </div>
 
-      <header className="z-40 flex w-full items-center justify-between bg-background/80 px-8 py-4 backdrop-blur-md">
-        <Link href="/screening/start" className="-ml-2 rounded-full p-2 text-primary transition-colors duration-300 hover:bg-surfaceContainerLow">
-          <span className="material-symbols-outlined text-[24px] font-light">close</span>
-        </Link>
-        <h1 className="flex-1 text-center text-xl font-medium tracking-widest text-primary">lumine</h1>
+      <header className="fixed left-0 top-0 z-50 flex w-full items-center justify-between bg-background/80 px-8 py-4 backdrop-blur-md">
+        <button
+          type="button"
+          onClick={goToPrevious}
+          className="-ml-2 rounded-full p-2 text-primary transition-colors duration-300 hover:bg-surfaceContainerLow"
+        >
+          <span className="material-symbols-outlined text-[24px] font-light">
+            {currentIndex > 0 ? "arrow_back" : "close"}
+          </span>
+        </button>
+        <h1 className="flex-1 text-center text-xl font-medium tracking-widest text-primary">Lumine</h1>
         <div className="w-10" />
       </header>
 
-      <main className="flex flex-1 flex-col px-8 pb-32 pt-24">
+      <main className="flex flex-1 flex-col px-8 pb-32 pt-28">
         <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center">
           <p className="text-sm tracking-[0.24em] text-secondary/70">{currentSectionTitle ?? "지금 마음"}</p>
           <h2 className="mb-6 mt-8 text-left text-4xl font-light leading-[1.6] tracking-widest text-primary">{currentItem?.title ?? "질문을 불러오고 있어요"}</h2>
@@ -68,7 +100,7 @@ export default function ScreeningQuestionsPage() {
                   <button
                     key={option.value}
                     type="button"
-                    onClick={() => setAnswers((prev) => ({ ...prev, [currentItem.id]: option.value }))}
+                    onClick={() => void handleSelectOption(option.value)}
                     className={`${widthClass} flex items-center justify-center rounded-full px-8 py-5 text-left transition-all duration-500 ease-out ${active ? "bg-primary text-white shadow-moon" : "bg-surfaceContainerLowest text-primary hover:bg-surfaceContainerLow"}`}
                   >
                     <span className="text-lg font-medium tracking-wider">{option.label}</span>
@@ -91,14 +123,27 @@ export default function ScreeningQuestionsPage() {
         <span className="text-sm tracking-widest text-onSurfaceVariant/60">
           {items.length > 0 ? `${String(currentIndex + 1).padStart(2, "0")} / ${String(items.length).padStart(2, "0")}` : "00 / 00"}
         </span>
-        <button
-          type="button"
-          onClick={handleNext}
-          disabled={submitScreening.isPending || (currentItem?.required && !answers[currentItem.id])}
-          className="w-full max-w-[200px] rounded-full bg-secondaryContainer py-4 text-center text-sm font-medium tracking-widest text-tertiary transition-colors duration-500 ease-out hover:bg-tertiaryContainer disabled:opacity-50"
-        >
-          {isLast ? (submitScreening.isPending ? "정리하는 중" : "결과 보기") : "다음으로"}
-        </button>
+        <div className="flex w-full max-w-[280px] justify-end gap-3">
+          {currentIndex > 0 ? (
+            <button
+              type="button"
+              onClick={goToPrevious}
+              className="rounded-full bg-surfaceContainerLowest px-5 py-4 text-center text-sm font-medium tracking-widest text-primary transition-colors duration-500 ease-out hover:bg-surfaceContainerLow"
+            >
+              이전 질문
+            </button>
+          ) : null}
+          {currentItem?.kind !== "single_choice" ? (
+            <button
+              type="button"
+              onClick={handleNext}
+              disabled={submitScreening.isPending || (currentItem?.required && !answers[currentItem.id])}
+              className="w-full max-w-[200px] rounded-full bg-secondaryContainer py-4 text-center text-sm font-medium tracking-widest text-tertiary transition-colors duration-500 ease-out hover:bg-tertiaryContainer disabled:opacity-50"
+            >
+              {isLast ? (submitScreening.isPending ? "정리하는 중" : "결과 보기") : "다음으로"}
+            </button>
+          ) : null}
+        </div>
       </div>
     </div>
   );

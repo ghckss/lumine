@@ -1,0 +1,18 @@
+{
+  "name": "lumine-workspace",
+  "private": true,
+  "scripts": {
+    "dev:web": "cd web && npm run dev",
+    "dev:server": "cd server && GRADLE_USER_HOME=/tmp/gradle-home JAVA_TOOL_OPTIONS='-Djava.io.tmpdir=/tmp' /tmp/gradle-8.10.2/bin/gradle --project-cache-dir /tmp/gradle-project-cache bootRun",
+    "dev:metro": "cd app && pnpm start",
+    "dev:ios": "cd app && pnpm ios:no-packager",
+    "dev:android": "cd app && pnpm android:no-packager",
+    "dev:all": "./scripts/dev-all.sh",
+    "deploy:web": "./scripts/deploy-web.sh",
+    "deploy:server": "./scripts/deploy-server.sh",
+    "deploy:all": "./scripts/deploy-all.sh",
+    "artifact:android": "cd app/android && ./gradlew bundleRelease",
+    "artifact:ios": "cd app/ios && xcodebuild -workspace LumineNativeShell.xcworkspace -scheme LumineNativeShell -configuration Release -archivePath build/LumineNativeShell.xcarchive archive",
+    "artifact:app": "./scripts/build-mobile-artifacts.sh"
+  }
+}

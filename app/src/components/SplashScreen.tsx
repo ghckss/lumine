@@ -8,7 +8,7 @@ export function SplashScreen() {
       <View style={styles.badge}>
         <Text style={styles.badgeText}>lumis eterne</Text>
       </View>
-      <Text style={styles.title}>lumine</Text>
+      <Text style={styles.title}>Lumine</Text>
       <Text style={styles.subtitle}>당신의 영원한 빛</Text>
       <ActivityIndicator color={tokens.primary} style={styles.loader} />
     </View>

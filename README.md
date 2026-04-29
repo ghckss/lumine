@@ -1,4 +1,4 @@
-# lumine
+# Lumine
 
 **lumis eterne - 당신의 영원한 빛**
 
@@ -13,6 +13,37 @@ Lumine은 당신에게 `빨리 나아지라`고 재촉하지 않습니다.
 
 사라지지 않는 영원한 마음의 빛, **Lumis Eterne**.  
 오늘 당신의 조각난 마음들을 이곳에 가만히 내려놓으세요.
+
+## Run All
+
+```bash
+cd /Users/hwanghochan/workspace/lumine
+npm run dev:all
+```
+
+개별 실행:
+- `npm run dev:web`
+- `npm run dev:server`
+- `npm run dev:metro`
+- `npm run dev:ios`
+- `npm run dev:android`
+
+## Deploy
+
+스토어 아티팩트:
+- `npm run artifact:android`
+- `npm run artifact:ios`
+- `npm run artifact:app`
+
+루트 기준 커맨드:
+- `npm run deploy:web`
+- `npm run deploy:server`
+- `npm run deploy:all`
+
+GitHub Actions:
+- `master` 브랜치 push 시 `.github/workflows/deploy.yml` 실행
+- 필요 변수: `AWS_REGION`, `AWS_ACCOUNT_ID`, `EKS_CLUSTER_NAME`, `ECR_WEB_REPOSITORY`, `ECR_SERVER_REPOSITORY`, `K8S_NAMESPACE_WEB`, `K8S_NAMESPACE_SERVER`, `WEB_HOST`, `API_HOST`, `NEXT_PUBLIC_API_BASE_URL`
+- 필요 시크릿: `AWS_ROLE_ARN`
 
 ## Structure
 

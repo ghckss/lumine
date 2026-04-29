@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { loginWithNativeProvider, logoutFromNativeProvider } from "../auth/auth-service";
 import { api } from "../lib/api";
+import { syncGuestContentToServer } from "../lib/content-sync";
 import { clearSession, loadSession, saveSession } from "../storage/secure-store";
 import type { Gender, LoginSession, UserProfile } from "../types/session";
 
@@ -50,6 +51,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     } catch {
       setProfile(null);
     }
+
+    await syncGuestContentToServer().catch(() => undefined);
   }, []);
 
   const completeProfile = useCallback(

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useScreeningLatest } from "@/shared/hooks/use-screening-latest";
 
 export default function ScreeningResultPage() {
-  const { data: result } = useScreeningLatest();
+  const { data: result, isFetching } = useScreeningLatest({ refetchOnMount: "always" });
   const actions = result?.recommendedActions ?? [];
 
   return (
@@ -14,7 +14,7 @@ export default function ScreeningResultPage() {
           <Link href="/screening/questions" className="-ml-2 rounded-full p-2 text-primary hover:opacity-60">
             <span className="material-symbols-outlined text-[24px]">arrow_back</span>
           </Link>
-          <h1 className="absolute left-1/2 -translate-x-1/2 text-lg font-medium tracking-widest text-primary">lumine</h1>
+          <h1 className="absolute left-1/2 -translate-x-1/2 text-lg font-medium tracking-widest text-primary">Lumine</h1>
           <div className="w-10" />
         </div>
         <div className="h-px w-full bg-surfaceContainerHigh opacity-20" />
@@ -24,6 +24,12 @@ export default function ScreeningResultPage() {
         {!result ? (
           <section className="mb-8 mt-8 rounded-[28px] bg-surfaceContainerLowest p-6 shadow-ambient">
             <p className="text-sm leading-7 text-onSurfaceVariant">가장 최근 상태를 불러오고 있어요.</p>
+          </section>
+        ) : null}
+
+        {result && isFetching ? (
+          <section className="mb-6 mt-6 rounded-[24px] bg-surfaceContainerLowest px-5 py-4 shadow-ambient">
+            <p className="text-xs tracking-[0.18em] text-onSurfaceVariant/80">최근 결과를 다시 확인하고 있어요.</p>
           </section>
         ) : null}
 

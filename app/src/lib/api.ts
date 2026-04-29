@@ -5,6 +5,17 @@ type ApiEnvelope<T> = {
   data: T;
 };
 
+
+export type JournalEntryPayload = {
+  date: string;
+  emotions: string[];
+  body: string;
+};
+
+export type ScreeningPayload = {
+  answers: Record<string, string>;
+};
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
@@ -44,6 +55,18 @@ export const api = {
   },
   getMe() {
     return request<UserProfile>("/api/users/me");
+  },
+  saveJournalEntry(payload: JournalEntryPayload) {
+    return request("/api/journal/entries", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  },
+  submitScreening(payload: ScreeningPayload) {
+    return request("/api/screening/submissions", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
   },
   upsertProfile(payload: {
     provider: LoginSession["provider"];

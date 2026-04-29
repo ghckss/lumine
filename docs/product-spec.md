@@ -1,8 +1,8 @@
-# lumine MVP 기획 문서
+# Lumine MVP 기획 문서
 
 
 ## 0. 브랜드
-- 앱 이름은 `lumine`예요.
+- 앱 이름은 `Lumine`예요.
 - 브랜드 슬로건은 `lumis eterne - 당신의 영원한 빛`이에요.
 - 사용자에게는 우울을 없애야 할 결함보다, 오래 품고 있던 마음의 빛을 천천히 들여다보는 공간으로 느껴져야 해요.
 - 시각 톤앤매너는 `docs/designs.md`에 정리된 `Moonlight Sanctuary` 디자인 시스템을 따라가요.

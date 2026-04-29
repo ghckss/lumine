@@ -1,3 +1,4 @@
+import { nativeAuthConfig, shouldUseMockSocialLogin } from "../../config/auth";
 import type { NativeAuthPayload, NativeAuthProvider } from "./types";
 
 export class KakaoNativeAuthProvider implements NativeAuthProvider {
@@ -9,19 +10,28 @@ export class KakaoNativeAuthProvider implements NativeAuthProvider {
     try {
       const kakaoModule = require("@react-native-seoul/kakao-login");
 
-      if (typeof kakaoModule?.login === "function") {
-        const result = await kakaoModule.login();
-
-        return {
-          provider: "kakao",
-          providerUserId: String(result.id ?? "kakao-native-user"),
-          accessToken: result.accessToken ?? "kakao-native-access-token",
-          refreshToken: result.refreshToken ?? null,
-          displayName: result.nickname ?? null
-        };
+      if (typeof kakaoModule?.login !== "function") {
+        throw new Error("Kakao Login SDK를 불러오지 못했습니다.");
       }
+
+      const token = await kakaoModule.login();
+      const profile = typeof kakaoModule?.getProfile === "function" ? await kakaoModule.getProfile() : null;
+
+      if (!profile?.id) {
+        throw new Error("카카오 사용자 프로필을 확인하지 못했습니다.");
+      }
+
+      return {
+        provider: "kakao",
+        providerUserId: String(profile.id),
+        accessToken: token.accessToken ?? "kakao-native-access-token",
+        refreshToken: token.refreshToken ?? null,
+        displayName: profile.nickname ?? profile.name ?? null
+      };
     } catch {
-      // Fall through to shell mock when the SDK is not installed yet.
+      if (!shouldUseMockSocialLogin() || nativeAuthConfig.kakaoNativeAppKey) {
+        throw new Error("카카오 로그인에 실패했습니다.");
+      }
     }
 
     return {
@@ -40,7 +50,9 @@ export class KakaoNativeAuthProvider implements NativeAuthProvider {
         await kakaoModule.logout();
       }
     } catch {
-      // Ignore provider logout errors in shell mode.
+      if (!shouldUseMockSocialLogin()) {
+        throw new Error("카카오 로그아웃에 실패했습니다.");
+      }
     }
   }
 }

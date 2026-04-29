@@ -25,7 +25,27 @@ pnpm install
 
 `react-native-keychain`이 설치되면 세션 저장은 keychain/keystore를 우선 사용하고, 없으면 메모리 fallback으로 동작해요.
 
-카카오/구글 네이티브 로그인 SDK도 의존성에 선언돼 있어요. 아직 네이티브 프로젝트와 앱 키 설정 전이기 때문에, 현재 셸에서는 SDK가 없거나 설정되지 않았을 때 mock authorize 결과로 fallback해요.
+카카오/구글 네이티브 로그인 SDK도 의존성에 선언돼 있어요. 기본값은 mock social login fallback이 켜져 있고, 설정 값이 비어 있으면 셸이 mock authorize 결과를 반환해요.
+
+실 로그인 전환 시 아래 값을 먼저 채워야 해요.
+
+- `app/src/config/auth.ts`
+- `app/ios/LumineNativeShell/Info.plist`
+- `app/android/app/src/main/res/values/strings.xml`
+
+iOS는 추가로 아래 둘 중 하나가 필요해요.
+
+- `GoogleService-Info.plist`를 Xcode 프로젝트에 추가
+- 또는 `app/src/config/auth.ts`의 `googleIosClientId`를 채우기
+
+필수 placeholder:
+
+- `YOUR_KAKAO_NATIVE_APP_KEY`
+- `YOUR_GOOGLE_WEB_CLIENT_ID`
+- `YOUR_GOOGLE_IOS_CLIENT_ID`
+- `YOUR_GOOGLE_IOS_REVERSED_CLIENT_ID`
+
+카카오 Android redirect activity와 iOS URL scheme/openURL 처리는 프로젝트에 반영돼 있어요.
 
 ## Metro 실행
 ```bash
@@ -70,4 +90,12 @@ pnpm android
 - iOS는 현재 Hermes를 끈 상태예요.
 - Android는 현재 `newArchEnabled=false`로 맞춰둔 상태예요.
 - Android는 `android/local.properties`에 로컬 SDK 경로가 필요해요.
-- 실사용 단계로 가려면 카카오 앱 키/Google 설정 파일 연결, 푸시/알림 네이티브 연동이 추가로 필요해요.
+- 실사용 단계로 가려면 `app/src/config/auth.ts`의 `enableMockSocialLogin`을 `false`로 바꾸고, 카카오 앱 키/Google 설정 파일 연결을 마쳐야 해요.
+
+## 스토어 아티팩트
+- Android 릴리스 산출물은 `AAB` 기준으로 만들어요.
+- iOS 릴리스 산출물은 `xcarchive`, `IPA` 기준으로 만들어요.
+- 루트에서 `npm run artifact:android`, `npm run artifact:ios`, `npm run artifact:app` 커맨드를 사용할 수 있어요.
+- GitHub Actions의 `.github/workflows/mobile-artifacts.yml`는 `master` push 시 Android AAB와 iOS IPA/xcarchive를 artifact로 저장해요.
+- Android 시크릿: `ANDROID_UPLOAD_KEYSTORE_BASE64`, `ANDROID_UPLOAD_STORE_PASSWORD`, `ANDROID_UPLOAD_KEY_ALIAS`, `ANDROID_UPLOAD_KEY_PASSWORD`
+- iOS 시크릿: `IOS_BUILD_CERTIFICATE_BASE64`, `IOS_P12_PASSWORD`, `IOS_PROVISIONING_PROFILE_BASE64`, `IOS_KEYCHAIN_PASSWORD`, `IOS_TEAM_ID`, `IOS_PROVISIONING_PROFILE_NAME`

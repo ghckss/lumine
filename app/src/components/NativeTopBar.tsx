@@ -4,19 +4,19 @@ import { tokens } from "../config/tokens";
 
 type NativeTopBarProps = {
   displayName: string;
-  onLogout: () => void;
+  onMenuPress: () => void;
 };
 
-export function NativeTopBar({ displayName, onLogout }: NativeTopBarProps) {
+export function NativeTopBar({ displayName, onMenuPress }: NativeTopBarProps) {
   return (
     <View style={styles.container}>
       <View>
         <Text style={styles.eyebrow}>lumis eterne</Text>
-        <Text style={styles.title}>{displayName}님, 오늘의 마음</Text>
+        <Text style={styles.title}>{displayName}</Text>
       </View>
 
-      <Pressable onPress={onLogout} style={styles.button}>
-        <Text style={styles.buttonText}>로그아웃</Text>
+      <Pressable onPress={onMenuPress} style={styles.menuButton}>
+        <Text style={styles.menuIcon}>☰</Text>
       </Pressable>
     </View>
   );
@@ -46,17 +46,17 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: tokens.text
   },
-  button: {
-    minHeight: 36,
-    paddingHorizontal: 14,
+  menuButton: {
+    width: 40,
+    height: 40,
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: tokens.secondaryContainer
   },
-  buttonText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: tokens.secondary
+  menuIcon: {
+    color: tokens.secondary,
+    fontSize: 18,
+    fontWeight: "700"
   }
 });

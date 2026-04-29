@@ -124,7 +124,7 @@ export default function JournalPage() {
         </div>
 
         <div className="relative z-10 mt-6 max-w-[31rem]">
-          <p className="text-xs uppercase tracking-[0.24em] text-white/60">lumine</p>
+          <p className="text-xs uppercase tracking-[0.24em] text-white/60">Lumine</p>
           <h1 className="mt-3 text-[2.15rem] leading-[1.18] text-white sm:text-[2.35rem]">
             오늘 오래 남은 장면을
             <br />

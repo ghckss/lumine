@@ -1,11 +1,15 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/shared/lib/api";
+import { useBridgeBootstrap } from "@/shared/hooks/use-bridge-bootstrap";
+import { getScreeningHistoryContent } from "@/shared/lib/content-store";
 
 export function useScreeningHistory() {
+  const bootstrap = useBridgeBootstrap();
+
   return useQuery({
-    queryKey: ["screening-history"],
-    queryFn: api.getScreeningHistory
+    queryKey: ["screening-history", bootstrap.mode],
+    queryFn: () => getScreeningHistoryContent(bootstrap.mode),
+    enabled: bootstrap.ready
   });
 }

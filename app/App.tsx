@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import { SafeAreaView, StatusBar, StyleSheet } from "react-native";
 import { initializeNativeAuthProviders } from "./src/auth/providers";
 import { SessionProvider, useSession } from "./src/context/SessionContext";
-import { PermissionGate } from "./src/components/PermissionGate";
 import { SplashScreen } from "./src/components/SplashScreen";
+import { WelcomeScreen } from "./src/screens/WelcomeScreen";
 import { NativeAuthScreen } from "./src/screens/NativeAuthScreen";
 import { ProfileSetupScreen } from "./src/screens/ProfileSetupScreen";
 import { WebViewContainer } from "./src/screens/WebViewContainer";
@@ -23,7 +23,8 @@ export default function App() {
 
 function AppRoot() {
   const [isSplashVisible, setIsSplashVisible] = useState(true);
-  const [hasAcceptedGate, setHasAcceptedGate] = useState(false);
+  const [hasSeenWelcome, setHasSeenWelcome] = useState(false);
+  const [isGuestMode, setIsGuestMode] = useState(false);
   const { isRestoring, session, profile, logout } = useSession();
 
   useEffect(() => {
@@ -33,12 +34,6 @@ function AppRoot() {
 
     return () => clearTimeout(timer);
   }, []);
-
-  useEffect(() => {
-    if (!session) {
-      setHasAcceptedGate(false);
-    }
-  }, [session]);
 
   if (isSplashVisible || isRestoring) {
     return (
@@ -55,7 +50,27 @@ function AppRoot() {
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor={tokens.background} />
-        <NativeAuthScreen />
+        {isGuestMode ? (
+          <WebViewContainer
+            session={null}
+            profile={null}
+            onLogout={logout}
+            onRequireAuth={() => {
+              setIsGuestMode(false);
+              setHasSeenWelcome(true);
+            }}
+          />
+        ) : hasSeenWelcome ? (
+          <NativeAuthScreen onBack={() => setHasSeenWelcome(false)} />
+        ) : (
+          <WelcomeScreen
+            onStart={() => setHasSeenWelcome(true)}
+            onExistingAccount={() => setHasSeenWelcome(true)}
+            onGuest={() => {
+              setIsGuestMode(true);
+            }}
+          />
+        )}
       </SafeAreaView>
     );
   }
@@ -72,11 +87,7 @@ function AppRoot() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={tokens.background} />
-      {hasAcceptedGate ? (
-        <WebViewContainer session={session} profile={profile} onLogout={logout} />
-      ) : (
-        <PermissionGate onContinue={() => setHasAcceptedGate(true)} />
-      )}
+      <WebViewContainer session={session} profile={profile} onLogout={logout} onRequireAuth={() => undefined} />
     </SafeAreaView>
   );
 }

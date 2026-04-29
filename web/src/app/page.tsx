@@ -83,7 +83,7 @@ export default function HomePage() {
         <div className="mx-auto flex w-full max-w-xl items-center justify-between">
           <div>
             <p className="text-[11px] uppercase tracking-[0.22em] text-primary/70">lumis eterne</p>
-            <h1 className="mt-1 text-lg font-semibold tracking-[0.18em] text-primary">lumine</h1>
+            <h1 className="mt-1 text-lg font-semibold tracking-[0.18em] text-primary">Lumine</h1>
           </div>
           <span className="rounded-full bg-surfaceContainerLow px-3 py-2 text-xs font-medium text-onSurfaceVariant">
             오늘의 마음
@@ -101,7 +101,7 @@ export default function HomePage() {
         <div className="pointer-events-none absolute right-14 top-28 hidden h-px w-16 -rotate-[18deg] bg-white/10 sm:block" />
 
         <div className="relative z-10 mt-6 max-w-[31rem]">
-          <p className="text-xs uppercase tracking-[0.24em] text-white/60">lumine</p>
+          <p className="text-xs uppercase tracking-[0.24em] text-white/60">Lumine</p>
           <h1 className="mt-3 text-[2.15rem] leading-[1.18] text-white sm:text-[2.35rem]">
             마음의 수면에
             <br />

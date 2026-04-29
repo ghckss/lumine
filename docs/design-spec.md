@@ -1,4 +1,4 @@
-# lumine MVP 디자인 문서
+# Lumine MVP 디자인 문서
 
 ## 0. 문서 역할
 - `docs/designs.md`는 디자인 시스템 원본 문서예요.

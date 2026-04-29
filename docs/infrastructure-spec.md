@@ -1,4 +1,4 @@
-# lumine 인프라 작업 문서
+# Lumine 인프라 작업 문서
 
 ## 0. 범위
 - 대상: `web/`, `server/`, `app/`

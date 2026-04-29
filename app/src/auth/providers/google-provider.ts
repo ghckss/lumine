@@ -1,20 +1,36 @@
+import { Platform } from "react-native";
+import { nativeAuthConfig, shouldUseMockSocialLogin } from "../../config/auth";
 import type { NativeAuthPayload, NativeAuthProvider } from "./types";
+
+function getGoogleSigninOptions() {
+  return {
+    ...(nativeAuthConfig.googleWebClientId ? { webClientId: nativeAuthConfig.googleWebClientId } : {}),
+    ...(Platform.OS === "ios" && nativeAuthConfig.googleIosClientId
+      ? { iosClientId: nativeAuthConfig.googleIosClientId }
+      : {}),
+    ...(Platform.OS === "ios" && nativeAuthConfig.googleServicePlistPath
+      ? { googleServicePlistPath: nativeAuthConfig.googleServicePlistPath }
+      : {}),
+    offlineAccess: Boolean(nativeAuthConfig.googleWebClientId)
+  };
+}
 
 export class GoogleNativeAuthProvider implements NativeAuthProvider {
   async initialize(): Promise<void> {
     try {
       const googleModule = require("@react-native-google-signin/google-signin");
-      const googleWebClientId =
-        typeof process !== "undefined" && process.env ? process.env.GOOGLE_WEB_CLIENT_ID : undefined;
 
       if (typeof googleModule?.GoogleSignin?.configure === "function") {
-        googleModule.GoogleSignin.configure({
-          ...(googleWebClientId ? { webClientId: googleWebClientId } : {}),
-          offlineAccess: true
-        });
+        googleModule.GoogleSignin.configure(getGoogleSigninOptions());
       }
     } catch {
-      // Keep shell initialization optional until native projects are added.
+      if (
+        !shouldUseMockSocialLogin() ||
+        nativeAuthConfig.googleWebClientId ||
+        nativeAuthConfig.googleIosClientId
+      ) {
+        throw new Error("Google Sign-In 초기화에 실패했습니다.");
+      }
     }
   }
 
@@ -22,20 +38,41 @@ export class GoogleNativeAuthProvider implements NativeAuthProvider {
     try {
       const googleModule = require("@react-native-google-signin/google-signin");
 
-      if (typeof googleModule?.GoogleSignin?.signIn === "function") {
-        const result = await googleModule.GoogleSignin.signIn();
-        const tokens = await googleModule.GoogleSignin.getTokens();
-
-        return {
-          provider: "google",
-          providerUserId: String(result.user?.id ?? "google-native-user"),
-          accessToken: tokens.accessToken ?? "google-native-access-token",
-          refreshToken: null,
-          displayName: result.user?.name ?? null
-        };
+      if (typeof googleModule?.GoogleSignin?.configure !== "function" || typeof googleModule?.GoogleSignin?.signIn !== "function") {
+        throw new Error("Google Sign-In SDK를 불러오지 못했습니다.");
       }
+
+      googleModule.GoogleSignin.configure(getGoogleSigninOptions());
+
+      if (Platform.OS === "android" && typeof googleModule.GoogleSignin.hasPlayServices === "function") {
+        await googleModule.GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      }
+
+      const result = await googleModule.GoogleSignin.signIn();
+      if (result?.type !== "success" || !result.data?.user?.id) {
+        throw new Error("Google 로그인 결과를 확인하지 못했습니다.");
+      }
+
+      const tokens =
+        typeof googleModule.GoogleSignin.getTokens === "function"
+          ? await googleModule.GoogleSignin.getTokens()
+          : null;
+
+      return {
+        provider: "google",
+        providerUserId: String(result.data.user.id),
+        accessToken: tokens?.accessToken ?? result.data.idToken ?? "google-native-access-token",
+        refreshToken: null,
+        displayName: result.data.user.name ?? null
+      };
     } catch {
-      // Fall through to shell mock when the SDK is not installed yet.
+      if (
+        !shouldUseMockSocialLogin() ||
+        nativeAuthConfig.googleWebClientId ||
+        nativeAuthConfig.googleIosClientId
+      ) {
+        throw new Error("Google 로그인에 실패했습니다.");
+      }
     }
 
     return {
@@ -54,7 +91,9 @@ export class GoogleNativeAuthProvider implements NativeAuthProvider {
         await googleModule.GoogleSignin.signOut();
       }
     } catch {
-      // Ignore provider logout errors in shell mode.
+      if (!shouldUseMockSocialLogin()) {
+        throw new Error("Google 로그아웃에 실패했습니다.");
+      }
     }
   }
 }

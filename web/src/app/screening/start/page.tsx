@@ -8,7 +8,7 @@ export default function ScreeningStartPage() {
           <Link href="/" className="text-primary transition-opacity duration-300 hover:opacity-70">
             <span className="material-symbols-outlined text-2xl">arrow_back</span>
           </Link>
-          <h1 className="absolute left-1/2 -translate-x-1/2 text-2xl font-medium tracking-tighter text-primary">lumine</h1>
+          <h1 className="absolute left-1/2 -translate-x-1/2 text-2xl font-medium tracking-tighter text-primary">Lumine</h1>
           <div className="h-6 w-6" />
         </div>
       </header>

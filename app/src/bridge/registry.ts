@@ -1,5 +1,6 @@
 import { Linking, PermissionsAndroid, Platform } from "react-native";
 import { loadReminder, saveReminder } from "../storage/reminder-store";
+import { loadDeviceCache, removeDeviceCache, saveDeviceCache } from "../storage/device-cache";
 import { clearSession, setSecureValue } from "../storage/secure-store";
 import type { BridgeRequest, BridgeResponse } from "./types";
 
@@ -42,6 +43,17 @@ async function requestPushPermission() {
   }
 
   return { status: "unsupported_in_shell" as const };
+}
+
+
+function parseStorageKey(params?: Record<string, unknown>) {
+  const key = typeof params?.key === "string" ? params.key : null;
+
+  if (!key) {
+    throw new BridgeHandlerError("Missing storage key", "INVALID_PARAMS");
+  }
+
+  return key;
 }
 
 function parseReminderParams(params?: Record<string, unknown>) {
@@ -98,6 +110,24 @@ const registry: Record<string, BridgeHandler> = {
       type,
       existing: Boolean(existingReminder)
     };
+  },
+  "storage.get": async (params) => {
+    const key = parseStorageKey(params);
+    const value = await loadDeviceCache<unknown>(key);
+    return { key, value };
+  },
+  "storage.set": async (params) => {
+    const key = parseStorageKey(params);
+    if (!("value" in (params ?? {}))) {
+      throw new BridgeHandlerError("Missing storage value", "INVALID_PARAMS");
+    }
+    await saveDeviceCache(key, params?.value);
+    return { key, saved: true };
+  },
+  "storage.remove": async (params) => {
+    const key = parseStorageKey(params);
+    await removeDeviceCache(key);
+    return { key, removed: true };
   },
   "support.openHotline": async (params) => {
     const phone = typeof params?.phone === "string" ? params.phone : null;

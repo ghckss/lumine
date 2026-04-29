@@ -10,7 +10,7 @@ const appFont = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "lumine",
+  title: "Lumine",
   description: "lumis eterne - 당신의 영원한 빛"
 };
 

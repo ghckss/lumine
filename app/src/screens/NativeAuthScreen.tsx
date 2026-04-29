@@ -3,7 +3,11 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-nati
 import { useSession } from "../context/SessionContext";
 import { tokens } from "../config/tokens";
 
-export function NativeAuthScreen() {
+type NativeAuthScreenProps = {
+  onBack?: () => void;
+};
+
+export function NativeAuthScreen({ onBack }: NativeAuthScreenProps) {
   const { login } = useSession();
   const [pendingProvider, setPendingProvider] = useState<"kakao" | "google" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -24,9 +28,15 @@ export function NativeAuthScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.card}>
+        {onBack ? (
+          <Pressable onPress={onBack} style={styles.backButton}>
+            <Text style={styles.backButtonText}>이전으로</Text>
+          </Pressable>
+        ) : null}
+
         <Text style={styles.eyebrow}>lumis eterne</Text>
-        <Text style={styles.title}>당신의 영원한 빛으로 들어와요.</Text>
-        <Text style={styles.body}>로그인과 가입은 앱에서 먼저 조용히 마칠게요.</Text>
+        <Text style={styles.title}>조용히 시작해볼까요?</Text>
+        <Text style={styles.body}>로그인과 가입은 앱 안에서 가볍게 이어갈게요.</Text>
 
         <Pressable
           onPress={() => void handleLogin("kakao")}
@@ -71,6 +81,16 @@ const styles = StyleSheet.create({
     padding: 24,
     borderWidth: 1,
     borderColor: tokens.outline
+  },
+  backButton: {
+    alignSelf: "flex-start",
+    marginBottom: 18,
+    paddingVertical: 4
+  },
+  backButtonText: {
+    color: tokens.textMuted,
+    fontSize: 13,
+    fontWeight: "600"
   },
   eyebrow: {
     fontSize: 13,

@@ -2,6 +2,8 @@ export type ApiResponse<T> = {
   data: T;
 };
 
+let authAccessToken: string | null = null;
+
 export type JournalEmotion = {
   id: string;
   label: string;
@@ -67,11 +69,16 @@ export type SupportResource = {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 
+export function setApiAccessToken(token: string | null) {
+  authAccessToken = token;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
+      ...(authAccessToken ? { Authorization: `Bearer ${authAccessToken}` } : {}),
       ...(init?.headers ?? {})
     },
     cache: "no-store"

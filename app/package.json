@@ -5,7 +5,9 @@
   "scripts": {
     "start": "react-native start",
     "android": "ANDROID_HOME=$HOME/Library/Android/sdk PATH=$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH react-native run-android",
-    "ios": "RUBYOPT=-rlogger react-native run-ios --simulator \"iPhone 17 Pro\""
+    "ios": "RUBYOPT=-rlogger react-native run-ios --simulator \"iPhone 17 Pro\"",
+    "ios:no-packager": "RUBYOPT=-rlogger react-native run-ios --simulator \"iPhone 17 Pro\" --no-packager",
+    "android:no-packager": "ANDROID_HOME=$HOME/Library/Android/sdk PATH=$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH react-native run-android --no-packager"
   },
   "dependencies": {
     "@react-native-google-signin/google-signin": "^13.1.0",

@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lumine-web
+  namespace: ${K8S_NAMESPACE_WEB}
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: lumine-web
+  template:
+    metadata:
+      labels:
+        app: lumine-web
+    spec:
+      containers:
+        - name: lumine-web
+          image: ${WEB_IMAGE}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: "3000"
+            - name: NEXT_PUBLIC_API_BASE_URL
+              value: ${NEXT_PUBLIC_API_BASE_URL}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lumine-web
+  namespace: ${K8S_NAMESPACE_WEB}
+spec:
+  selector:
+    app: lumine-web
+  ports:
+    - port: 80
+      targetPort: 3000
+      protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: lumine-web
+  namespace: ${K8S_NAMESPACE_WEB}
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+spec:
+  rules:
+    - host: ${WEB_HOST}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: lumine-web
+                port:
+                  number: 80
