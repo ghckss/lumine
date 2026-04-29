@@ -1,12 +1,32 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useSupportResources } from "@/shared/hooks/use-support-resources";
 
 export default function SupportPage() {
+  const searchParams = useSearchParams();
   const { data: resources = [] } = useSupportResources();
   const primaryResource = resources[0];
   const secondaryResources = resources.slice(1);
+  const fromSafetyFlow = searchParams.get("source") === "safety";
+
+  async function handleNotifySomeone() {
+    const message = "지금 조금 힘들어서, 괜찮다면 잠깐 이야기 나누고 싶어요.";
+
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ text: message });
+        return;
+      } catch {
+        return;
+      }
+    }
+
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      await navigator.clipboard.writeText(message);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background pb-24 font-body text-onSurface">
@@ -19,6 +39,19 @@ export default function SupportPage() {
       </header>
 
       <main className="mx-auto max-w-md px-6 pt-28">
+        {fromSafetyFlow ? (
+          <section className="mb-8 rounded-[28px] border border-secondary/25 bg-[linear-gradient(180deg,var(--color-secondary-container)_0%,var(--color-surface-container-lowest)_100%)] p-6 shadow-moon">
+            <p className="text-xs uppercase tracking-[0.22em] text-secondary/80">care first</p>
+            <h2 className="mt-3 text-[1.55rem] leading-[1.45] text-onSurface">
+              오늘 결과가 조금 무겁게 나왔네요.
+            </h2>
+            <p className="mt-4 text-sm leading-7 text-onSurfaceVariant">
+              혹시 괜찮다면 전문적인 상담을 한 번 받아보는 건 어떨까요? 저는 당신이 더 편안해졌으면 좋겠어요.
+              상담을 받으면서도 평소처럼 이곳에 들러주세요. 저는 늘 같은 자리에서 당신을 기다리고 있을게요.
+            </p>
+          </section>
+        ) : null}
+
         <section className="mb-12 pl-2">
           <h2 className="mb-4 text-4xl leading-[1.6] tracking-wider text-primary">
             마음의 무게를
@@ -30,6 +63,30 @@ export default function SupportPage() {
             <br />
             충분히 괜찮아질 수 있습니다.
           </p>
+        </section>
+
+        <section className="mb-8 grid grid-cols-1 gap-3">
+          {primaryResource ? (
+            <a
+              href={`tel:${primaryResource.phone}`}
+              className="flex h-14 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary px-6 text-sm font-semibold text-white shadow-moon"
+            >
+              {primaryResource.phone}로 연결하기
+            </a>
+          ) : null}
+          <a
+            href="tel:119"
+            className="flex h-14 items-center justify-center rounded-full bg-surfaceContainerLowest px-6 text-sm font-semibold text-secondary shadow-ambient"
+          >
+            119 도움 요청하기
+          </a>
+          <button
+            type="button"
+            onClick={handleNotifySomeone}
+            className="flex h-14 items-center justify-center rounded-full bg-surfaceContainerLowest px-6 text-sm font-semibold text-onSurface shadow-ambient"
+          >
+            주변 사람에게 알리기
+          </button>
         </section>
 
         <section className="mb-16 grid grid-cols-1 gap-6">
@@ -47,6 +104,12 @@ export default function SupportPage() {
                 <span className="material-symbols-outlined text-[18px]">call</span>
                 지금 연결하기
               </a>
+            </div>
+          ) : null}
+
+          {resources.length === 0 ? (
+            <div className="rounded-xl bg-surfaceContainerLowest p-5 shadow-ambient">
+              <p className="text-sm leading-7 text-onSurfaceVariant">도움 정보를 불러오고 있어요.</p>
             </div>
           ) : null}
 

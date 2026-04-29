@@ -1,17 +1,24 @@
 /node_modules
 /android/.gradle
+/android/build
 /android/app/build
 /ios/build
+/ios/Pods
+/vendor/bundle
 /coverage
 
-# Bundler
 /metro-cache
+.bundle/cache
 
 # Env
 .env
 .env.local
 
+# Local machine
+/android/local.properties
+
 # Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*

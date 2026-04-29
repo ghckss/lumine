@@ -20,3 +20,17 @@ export type BridgeResponse<T = unknown> = {
     message: string;
   };
 };
+
+export type NativeBridgeEnvelope =
+  | {
+      type: "webToApp";
+      payload: BridgeRequest;
+    }
+  | {
+      type: "bridgeResponse";
+      payload: BridgeResponse;
+    }
+  | {
+      type: "appToWeb";
+      payload: BridgeRequest;
+    };

@@ -21,6 +21,12 @@ export default function ScreeningResultPage() {
       </header>
 
       <main className="mx-auto px-6 md:max-w-2xl">
+        {!result ? (
+          <section className="mb-8 mt-8 rounded-[28px] bg-surfaceContainerLowest p-6 shadow-ambient">
+            <p className="text-sm leading-7 text-onSurfaceVariant">가장 최근 상태를 불러오고 있어요.</p>
+          </section>
+        ) : null}
+
         {result?.requiresSafetyPrompt ? (
           <section className="mb-8 mt-2">
             <div className="overflow-hidden rounded-[28px] border border-secondary/25 bg-[linear-gradient(180deg,var(--color-secondary-container)_0%,var(--color-surface-container-lowest)_100%)] p-6 shadow-moon">

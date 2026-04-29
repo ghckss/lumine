@@ -4,19 +4,26 @@
   "private": true,
   "scripts": {
     "start": "react-native start",
-    "android": "react-native run-android",
-    "ios": "react-native run-ios"
+    "android": "ANDROID_HOME=$HOME/Library/Android/sdk PATH=$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH react-native run-android",
+    "ios": "RUBYOPT=-rlogger react-native run-ios --simulator \"iPhone 17 Pro\""
   },
   "dependencies": {
+    "@react-native-google-signin/google-signin": "^13.1.0",
+    "@react-native-seoul/kakao-login": "^5.3.1",
     "react": "^18.3.1",
     "react-native": "^0.76.1",
+    "react-native-keychain": "^9.1.0",
     "react-native-webview": "^13.12.4"
   },
   "devDependencies": {
+    "@react-native-community/cli": "^15.0.1",
+    "@react-native-community/cli-platform-android": "^15.0.1",
+    "@react-native-community/cli-platform-ios": "^15.0.1",
     "@babel/core": "^7.26.0",
     "@babel/preset-env": "^7.26.0",
     "@babel/runtime": "^7.26.0",
     "@react-native/babel-preset": "^0.76.1",
+    "@react-native/gradle-plugin": "^0.76.1",
     "@react-native/metro-config": "^0.76.1",
     "@react-native/typescript-config": "^0.76.1",
     "@types/react": "^18.3.3",

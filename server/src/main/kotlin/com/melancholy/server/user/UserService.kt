@@ -20,6 +20,35 @@ class UserService {
 
     fun getCurrentUser(): UserMeResponse = currentUser.get().toResponse()
 
+    fun syncCurrentUser(
+        userId: String,
+        provider: AuthProvider,
+        displayName: String
+    ) {
+        val previous = currentUser.get()
+        currentUser.set(
+            previous.copy(
+                userId = userId,
+                provider = provider,
+                displayName = displayName
+            )
+        )
+    }
+
+    fun clearCurrentUser() {
+        currentUser.set(
+            UserProfile(
+                userId = "mock-user-001",
+                provider = AuthProvider.KAKAO,
+                displayName = "하린",
+                gender = Gender.FEMALE,
+                birthDate = java.time.LocalDate.of(1997, 5, 12),
+                agreedToTerms = true,
+                signedUpAt = Time.now().minusDays(14)
+            )
+        )
+    }
+
     fun upsertProfile(request: UpsertUserProfileRequest): UserMeResponse {
         val updated = UserProfile(
             userId = currentUser.get().userId,

@@ -31,8 +31,8 @@ export default function ScreeningQuestionsPage() {
       return;
     }
 
-    await submitScreening.mutateAsync({ answers });
-    router.push("/screening/result");
+    const result = await submitScreening.mutateAsync({ answers });
+    router.push(result.requiresSafetyPrompt ? "/support?source=safety" : "/screening/result");
   }
 
   return (
@@ -54,6 +54,10 @@ export default function ScreeningQuestionsPage() {
           <p className="text-sm tracking-[0.24em] text-secondary/70">{currentSectionTitle ?? "지금 마음"}</p>
           <h2 className="mb-6 mt-8 text-left text-4xl font-light leading-[1.6] tracking-widest text-primary">{currentItem?.title ?? "질문을 불러오고 있어요"}</h2>
           {currentItem?.description ? <p className="mb-10 text-sm leading-7 text-onSurfaceVariant">{currentItem.description}</p> : null}
+
+          {!questionnaire && !currentItem ? (
+            <p className="mb-10 text-sm leading-7 text-onSurfaceVariant">질문을 천천히 불러오고 있어요.</p>
+          ) : null}
 
           {currentItem?.kind === "single_choice" ? (
             <div className="flex w-full flex-col items-start gap-6 pl-4">

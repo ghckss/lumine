@@ -2,6 +2,7 @@ package com.melancholy.server.auth
 
 import com.melancholy.server.global.api.ApiResponse
 import com.melancholy.server.user.AuthProvider
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
@@ -12,10 +13,14 @@ class AuthController(
     private val authService: AuthService
 ) {
     @PostMapping("/login/kakao")
-    fun loginKakao(): ApiResponse<LoginResponse> = ApiResponse(authService.login(AuthProvider.KAKAO))
+    fun loginKakao(
+        @RequestBody(required = false) request: NativeLoginExchangeRequest?
+    ): ApiResponse<LoginResponse> = ApiResponse(authService.login(AuthProvider.KAKAO, request))
 
     @PostMapping("/login/google")
-    fun loginGoogle(): ApiResponse<LoginResponse> = ApiResponse(authService.login(AuthProvider.GOOGLE))
+    fun loginGoogle(
+        @RequestBody(required = false) request: NativeLoginExchangeRequest?
+    ): ApiResponse<LoginResponse> = ApiResponse(authService.login(AuthProvider.GOOGLE, request))
 
     @PostMapping("/logout")
     fun logout(): ApiResponse<LogoutResponse> = ApiResponse(authService.logout())
