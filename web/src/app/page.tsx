@@ -5,6 +5,7 @@ import { useJournalEntry } from "@/shared/hooks/useJournalEntry";
 import { useJournalHistory } from "@/shared/hooks/useJournalHistory";
 import { useScreeningHistory } from "@/shared/hooks/useScreeningHistory";
 import { getTodayDate } from "@/shared/lib/date";
+import { useEffect, useRef, useState } from "react";
 
 const steps = [
   {
@@ -63,7 +64,21 @@ function PrimaryButton({
   );
 }
 
+type Ripple = {
+  id: number;
+  x: number;
+  y: number;
+  size: number;
+  delay: number;
+};
+
 export default function HomePage() {
+  const areaRef = useRef<HTMLDivElement | null>(null);
+  const rippleIdRef = useRef(0);
+  const timeoutRef = useRef<number | null>(null);
+
+  const [ripples, setRipples] = useState<Ripple[]>([]);
+
   const today = getTodayDate();
   const { data: todayJournalEntry } = useJournalEntry(today);
   const { data: journalHistory } = useJournalHistory(10);
@@ -77,25 +92,87 @@ export default function HomePage() {
     ?? journalHistory?.flatMap((entry) => entry.emotions.map((emotion) => emotion.label)).slice(0, 3)
     ?? [];
 
+  useEffect(() => {
+    const createRippleGroup = () => {
+      const area = areaRef.current;
+      if (!area) return;
+
+      const { width, height } = area.getBoundingClientRect();
+
+      const x = Math.random() * width;
+      const y = Math.random() * height;
+      const maxDistance = Math.max(
+        Math.hypot(x, y),
+        Math.hypot(width - x, y),
+        Math.hypot(x, height - y),
+        Math.hypot(width - x, height - y),
+      );
+
+      const size = maxDistance * 2;
+      const count = Math.random() > 0.5 ? 2 : 1;
+
+      const nextRipples: Ripple[] = Array.from({ length: count }, (_, index) => ({
+        id: rippleIdRef.current++,
+        x,
+        y,
+        size,
+        delay: index * 0.2,
+      }));
+
+      setRipples((prev) => [...prev, ...nextRipples]);
+
+      // 애니메이션이 끝난 ripple 제거
+      window.setTimeout(() => {
+        setRipples((prev) =>
+          prev.filter((ripple) => !nextRipples.some((next) => next.id === ripple.id)),
+        );
+      }, 5400);
+
+      // 다음 랜덤 좌표 실행 간격
+      const nextDelay = 5000 + Math.random() * 1800;
+      timeoutRef.current = window.setTimeout(createRippleGroup, nextDelay);
+    };
+
+    createRippleGroup();
+
+    return () => {
+      if (timeoutRef.current) {
+        window.clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
     <main className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-xl flex-col gap-4 px-5 py-6 sm:px-6 sm:py-8">
-      <header className="relative overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-primary)_88%,black),color-mix(in_srgb,var(--color-primary)_62%,var(--color-on-primary-container))_100%)] px-6 py-7 text-white shadow-moon sm:px-7 sm:py-8">
+      <header ref={areaRef} className="relative overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-primary)_88%,black),color-mix(in_srgb,var(--color-primary)_62%,var(--color-on-primary-container))_100%)] px-6 py-7 text-white shadow-moon sm:px-7 sm:py-8">
         <div className="absolute inset-x-0 top-0 h-24 bg-[linear-gradient(180deg,rgba(255,255,255,0.16),rgba(255,255,255,0))]" />
         <div className="absolute right-[-24px] top-[-24px] h-40 w-40 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.22),rgba(255,255,255,0.02)_68%)]" />
         <div className="absolute bottom-[-40px] left-[-16px] h-24 w-56 rounded-t-[999px] bg-white/5 blur-2xl" />
-        <div className="pointer-events-none absolute inset-y-0 right-6 top-8 hidden w-36 rounded-full border border-white/10 sm:block" />
-        <div className="pointer-events-none absolute right-10 top-10 hidden h-24 w-24 rounded-full border border-white/10 sm:block" />
-        <div className="pointer-events-none absolute right-20 top-20 hidden h-px w-20 rotate-[24deg] bg-white/10 sm:block" />
-        <div className="pointer-events-none absolute right-14 top-28 hidden h-px w-16 -rotate-[18deg] bg-white/10 sm:block" />
+
+        {ripples.map((ripple) => (
+          <span
+            key={ripple.id}
+            className="pointer-events-none absolute rounded-full border-[5px] order-primaryFixed/70 bg-primaryFixed/20 bg-transparent"
+            style={{
+              left: ripple.x,
+              top: ripple.y,
+              width: ripple.size,
+              height: ripple.size,
+              animation: `ripple 5s linear ${ripple.delay}s both`,
+              transform: "translate(-50%, -50%) scale(0)",
+
+            }}
+          />
+        ))}
 
         <div className="relative z-10 mt-6 max-w-[31rem]">
           <p className="text-xs uppercase tracking-[0.24em] text-white/60">Lumine</p>
-          <h1 className="mt-3 text-[2.15rem] leading-[1.18] text-white sm:text-[2.35rem]">
-            마음의 수면에
+          <h1 className="mt-3 text-[2rem] leading-[1.18] text-white">
+            오늘 당신의 마음의 수면에
             <br />
-            어떤 빛이 머물렀나요
+            어떤 아름다운 빛이 머무르고 있나요?
           </h1>
-          <p className="mt-4 max-w-[22rem] text-sm leading-7 text-white/80 text-right">
+          <p className="mt-4 text-sm leading-7 text-white/80 text-right">
             오늘 당신의 하루를 닮은,<br />
             가장 솔직한 조각들을 가만히 들여보세요.
           </p>

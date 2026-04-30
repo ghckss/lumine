@@ -3,7 +3,7 @@ name: Mobile Artifacts
 on:
   push:
     branches:
-      - master
+      - block
   workflow_dispatch:
 
 jobs:

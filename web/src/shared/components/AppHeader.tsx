@@ -45,33 +45,33 @@ const privacySections = [
 function getHeaderConfig(pathname: string, displayName: string | null): HeaderConfig {
   if (pathname === "/") {
     return {
-      title: "Lumine Eterne",
+      title: "Lumis Eterne",
       subtitle: displayName ? `${displayName}님, 오늘의 마음` : "오늘의 마음"
     };
   }
 
   if (pathname.startsWith("/journal/history")) {
-    return { title: "Lumine Eterne", subtitle: "기록의 숨결", showBack: true, fallbackHref: "/" };
+    return { title: "Lumis Eterne", subtitle: "기록의 숨결", showBack: true, fallbackHref: "/" };
   }
 
   if (pathname.startsWith("/journal")) {
-    return { title: "Lumine Eterne", subtitle: "감정 일기", showBack: true, fallbackHref: "/" };
+    return { title: "Lumis Eterne", subtitle: "감정 일기", showBack: true, fallbackHref: "/" };
   }
 
   if (pathname.startsWith("/screening/questions")) {
-    return { title: "Lumine Eterne", subtitle: "마음 살펴보기", showBack: true, fallbackHref: "/screening/start" };
+    return { title: "Lumis Eterne", subtitle: "마음 살펴보기", showBack: true, fallbackHref: "/screening/start" };
   }
 
   if (pathname.startsWith("/screening/result")) {
-    return { title: "Lumine Eterne", subtitle: "분석 결과", showBack: true, fallbackHref: "/screening/questions" };
+    return { title: "Lumis Eterne", subtitle: "분석 결과", showBack: true, fallbackHref: "/screening/questions" };
   }
 
   if (pathname.startsWith("/screening/start")) {
-    return { title: "Lumine Eterne", subtitle: "마음 살펴보기", showBack: true, fallbackHref: "/" };
+    return { title: "Lumis Eterne", subtitle: "마음 살펴보기", showBack: true, fallbackHref: "/" };
   }
 
   if (pathname.startsWith("/support")) {
-    return { title: "Lumine Eterne", subtitle: "마음으로 잇는 연결", showBack: true, fallbackHref: "/" };
+    return { title: "Lumis Eterne", subtitle: "마음으로 잇는 연결", showBack: true, fallbackHref: "/" };
   }
 
   return { title: "Lumine" };
