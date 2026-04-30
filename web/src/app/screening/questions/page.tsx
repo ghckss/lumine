@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { useScreeningQuestionnaire } from "@/shared/hooks/use-screening-questionnaire";
-import { useSubmitScreening } from "@/shared/hooks/use-submit-screening";
+import { useScreeningQuestionnaire } from "@/shared/hooks/useScreeningQuestionnaire";
+import { useSubmitScreening } from "@/shared/hooks/useSubmitScreening";
 
 export default function ScreeningQuestionsPage() {
   const router = useRouter();
@@ -63,25 +62,11 @@ export default function ScreeningQuestionsPage() {
 
   return (
     <div className="relative mx-auto flex min-h-screen max-w-md flex-col overflow-x-hidden bg-background">
-      <div className="fixed left-0 top-0 z-50 h-[2px] w-full bg-surfaceContainerHigh">
+      <div className="fixed left-0 top-16 z-40 h-[2px] w-full bg-surfaceContainerHigh">
         <div className="h-full bg-primary/30 transition-all" style={{ width: `${items.length > 0 ? ((currentIndex + 1) / items.length) * 100 : 0}%` }} />
       </div>
 
-      <header className="fixed left-0 top-0 z-50 flex w-full items-center justify-between bg-background/80 px-8 py-4 backdrop-blur-md">
-        <button
-          type="button"
-          onClick={goToPrevious}
-          className="-ml-2 rounded-full p-2 text-primary transition-colors duration-300 hover:bg-surfaceContainerLow"
-        >
-          <span className="material-symbols-outlined text-[24px] font-light">
-            {currentIndex > 0 ? "arrow_back" : "close"}
-          </span>
-        </button>
-        <h1 className="flex-1 text-center text-xl font-medium tracking-widest text-primary">Lumine</h1>
-        <div className="w-10" />
-      </header>
-
-      <main className="flex flex-1 flex-col px-8 pb-32 pt-28">
+      <main className="flex flex-1 flex-col px-8 pb-32 pt-16">
         <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center">
           <p className="text-sm tracking-[0.24em] text-secondary/70">{currentSectionTitle ?? "지금 마음"}</p>
           <h2 className="mb-6 mt-8 text-left text-4xl font-light leading-[1.6] tracking-widest text-primary">{currentItem?.title ?? "질문을 불러오고 있어요"}</h2>

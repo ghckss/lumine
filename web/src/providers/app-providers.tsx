@@ -3,7 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { setApiAccessToken } from "@/shared/lib/api";
-import { BridgeBootstrapProvider, useBridgeBootstrap } from "@/shared/hooks/use-bridge-bootstrap";
+import { BridgeBootstrapProvider, useBridgeBootstrap } from "@/shared/hooks/useBridgeBootstrap";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());

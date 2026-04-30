@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useJournalEntry } from "@/shared/hooks/use-journal-entry";
-import { useJournalHistory } from "@/shared/hooks/use-journal-history";
-import { useScreeningHistory } from "@/shared/hooks/use-screening-history";
+import { useJournalEntry } from "@/shared/hooks/useJournalEntry";
+import { useJournalHistory } from "@/shared/hooks/useJournalHistory";
+import { useScreeningHistory } from "@/shared/hooks/useScreeningHistory";
 import { getTodayDate } from "@/shared/lib/date";
 
 const steps = [
@@ -78,19 +78,7 @@ export default function HomePage() {
     ?? [];
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-xl flex-col gap-4 px-5 py-6 sm:px-6 sm:py-8">
-      <header className="sticky top-0 z-40 -mx-5 -mt-6 border-b border-outlineVariant/50 bg-background/88 px-5 py-4 backdrop-blur-xl sm:-mx-6 sm:px-6">
-        <div className="mx-auto flex w-full max-w-xl items-center justify-between">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.22em] text-primary/70">lumis eterne</p>
-            <h1 className="mt-1 text-lg font-semibold tracking-[0.18em] text-primary">Lumine</h1>
-          </div>
-          <span className="rounded-full bg-surfaceContainerLow px-3 py-2 text-xs font-medium text-onSurfaceVariant">
-            오늘의 마음
-          </span>
-        </div>
-      </header>
-
+    <main className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-xl flex-col gap-4 px-5 py-6 sm:px-6 sm:py-8">
       <header className="relative overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-primary)_88%,black),color-mix(in_srgb,var(--color-primary)_62%,var(--color-on-primary-container))_100%)] px-6 py-7 text-white shadow-moon sm:px-7 sm:py-8">
         <div className="absolute inset-x-0 top-0 h-24 bg-[linear-gradient(180deg,rgba(255,255,255,0.16),rgba(255,255,255,0))]" />
         <div className="absolute right-[-24px] top-[-24px] h-40 w-40 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.22),rgba(255,255,255,0.02)_68%)]" />
@@ -135,7 +123,7 @@ export default function HomePage() {
         </section>
       </div>
 
-      <section className="grid gap-4">
+      <section className="grid gap-4 pb-8">
         <SurfaceCard className="bg-surfaceContainerLowest">
           <h2 className="mt-3 mb-3 text-[1.8rem] leading-[1.3] text-onSurface">오늘도 고생했어요</h2>
           <div className="grid gap-4 sm:grid-cols-2">

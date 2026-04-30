@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useBridgeBootstrap } from "@/shared/hooks/use-bridge-bootstrap";
+import { useBridgeBootstrap } from "@/shared/hooks/useBridgeBootstrap";
 import { getJournalEntryContent } from "@/shared/lib/content-store";
 
 export function useJournalEntry(date: string) {

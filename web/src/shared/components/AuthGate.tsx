@@ -1,6 +1,6 @@
 "use client";
 
-import { useBridgeBootstrap } from "@/shared/hooks/use-bridge-bootstrap";
+import { useBridgeBootstrap } from "@/shared/hooks/useBridgeBootstrap";
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const bootstrap = useBridgeBootstrap();

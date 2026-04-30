@@ -6,7 +6,6 @@ import { createAppToWebPayload, createBridgeResponsePayload, injectedBridgeScrip
 import { handleWebToAppBridge } from "../bridge/registry";
 import type { NativeBridgeEnvelope } from "../bridge/types";
 import { MoreMenuModal } from "../components/MoreMenuModal";
-import { NativeTopBar } from "../components/NativeTopBar";
 import { SupportFallback } from "../components/SupportFallback";
 import { WEB_BASE_URL } from "../config/env";
 import { tokens } from "../config/tokens";
@@ -197,11 +196,6 @@ export function WebViewContainer({ session, profile, onLogout, onRequireAuth }: 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        <NativeTopBar
-          displayName={isGuest ? "손님으로 머무는 오늘" : `${profile?.displayName ?? session?.displayName ?? "당신"}님, 오늘의 마음`}
-          onMenuPress={() => setIsMoreVisible(true)}
-        />
-
         <View style={styles.webViewFrame}>
           {hasLoadError ? (
             <SupportFallback onRetry={reloadWebView} />

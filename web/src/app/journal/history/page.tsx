@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useJournalHistory } from "@/shared/hooks/use-journal-history";
+import { useJournalHistory } from "@/shared/hooks/useJournalHistory";
 import { formatKoreanDate } from "@/shared/lib/date";
 
 const positiveEmotions = new Set(["차분함", "안도감", "기쁨", "즐거움", "행복", "고마움", "편안함", "설렘", "평온함"]);
@@ -36,15 +36,7 @@ export default function JournalHistoryPage() {
 
   return (
     <div className="min-h-screen bg-background text-onSurface">
-      <header className="fixed top-0 z-50 flex h-16 w-full items-center justify-between bg-background/80 px-6 pb-1 backdrop-blur-xl">
-        <div className="flex items-center">
-          <span className="material-symbols-outlined cursor-pointer text-primary transition-opacity duration-300 hover:opacity-70">menu</span>
-        </div>
-        <h1 className="text-lg font-medium tracking-widest text-primary">기록의 숨결</h1>
-        <div className="h-8 w-8 overflow-hidden rounded-full bg-surfaceContainerHigh" />
-      </header>
-
-      <main className="mx-auto flex max-w-2xl flex-col gap-12 px-6 pb-32 pt-24">
+      <main className="mx-auto flex max-w-2xl flex-col gap-12 px-6 pb-32 pt-8">
         <section className="flex flex-col gap-6">
           <h2 className="text-2xl tracking-wide text-primary">최근 마음의 기록</h2>
           <div className="relative flex h-48 w-full items-center justify-center overflow-hidden rounded-[2rem] bg-surfaceContainerLow">

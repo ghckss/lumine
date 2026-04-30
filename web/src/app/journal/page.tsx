@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { useSaveJournalEntry } from "@/shared/hooks/use-save-journal-entry";
+import { useSaveJournalEntry } from "@/shared/hooks/useSaveJournalEntry";
 import { formatKoreanDate, getTodayDate } from "@/shared/lib/date";
 
 const positiveEmotionOptions = ["차분함", "안도감", "기쁨", "즐거움", "행복", "고마움", "편안함", "설렘"];

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useSupportResources } from "@/shared/hooks/use-support-resources";
+import { AppIcon } from "@/shared/components/AppIcon";
+import { useSupportResources } from "@/shared/hooks/useSupportResources";
 
 export default function SupportPage() {
   const searchParams = useSearchParams();
@@ -30,15 +31,7 @@ export default function SupportPage() {
 
   return (
     <div className="min-h-screen bg-background pb-24 font-body text-onSurface">
-      <header className="fixed top-0 z-50 flex w-full items-center justify-between bg-gradient-to-b from-background to-transparent px-6 py-4 backdrop-blur-md">
-        <Link href="/" className="-ml-2 rounded-full p-2 text-primary transition-opacity duration-300 hover:opacity-70">
-          <span className="material-symbols-outlined">arrow_back</span>
-        </Link>
-        <h1 className="text-lg font-medium tracking-widest text-primary">마음으로 잇는 연결</h1>
-        <div className="w-10" />
-      </header>
-
-      <main className="mx-auto max-w-md px-6 pt-28">
+      <main className="mx-auto max-w-md px-6 pt-8">
         {fromSafetyFlow ? (
           <section className="mb-8 rounded-[28px] border border-secondary/25 bg-[linear-gradient(180deg,var(--color-secondary-container)_0%,var(--color-surface-container-lowest)_100%)] p-6 shadow-moon">
             <p className="text-xs uppercase tracking-[0.22em] text-secondary/80">care first</p>
@@ -98,10 +91,10 @@ export default function SupportPage() {
                   <h3 className="mb-1 text-2xl text-secondary">{primaryResource.phone}</h3>
                   <p className="mb-4 text-xs text-onSurfaceVariant">{primaryResource.title}</p>
                 </div>
-                <span className="material-symbols-outlined text-3xl text-secondary/60">support_agent</span>
+                <AppIcon name="support-agent" className="h-8 w-8 text-secondary/60" />
               </div>
               <a href={`tel:${primaryResource.phone}`} className="flex w-full items-center justify-center gap-2 rounded-full bg-surfaceContainerLow py-3 text-sm text-secondary transition-colors duration-300 hover:bg-secondaryContainer">
-                <span className="material-symbols-outlined text-[18px]">call</span>
+                <AppIcon name="call" className="h-[18px] w-[18px]" />
                 지금 연결하기
               </a>
             </div>
@@ -118,14 +111,17 @@ export default function SupportPage() {
               <div key={resource.phone} className="flex flex-col justify-between rounded-xl bg-surfaceContainerLowest p-5 shadow-ambient">
                 <div>
                   <div className="mb-2 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[20px] text-primary/50">{resource.phone === "119" ? "emergency" : "health_and_safety"}</span>
+                    <AppIcon
+                      name={resource.phone === "119" ? "emergency" : "health-and-safety"}
+                      className="h-5 w-5 text-primary/50"
+                    />
                     <h3 className="text-xl text-primary">{resource.phone}</h3>
                   </div>
                   <p className="mb-4 text-[11px] leading-tight text-onSurfaceVariant">{resource.title}</p>
                 </div>
                 <a href={`tel:${resource.phone}`} className="flex w-max items-center gap-1 border-b border-primary/20 pb-1 text-left text-xs text-primary">
                   통화 연결
-                  <span className="material-symbols-outlined text-[14px]">arrow_outward</span>
+                  <AppIcon name="arrow-outward" className="h-[14px] w-[14px]" />
                 </a>
               </div>
             ))}
@@ -134,7 +130,7 @@ export default function SupportPage() {
 
         <section className="mb-8 rounded-xl bg-surfaceContainerLow p-8 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-surfaceContainerLowest shadow-ambient">
-            <span className="material-symbols-outlined text-2xl text-primary">auto_awesome</span>
+            <AppIcon name="auto-awesome" className="h-6 w-6 text-primary" />
           </div>
           <h3 className="mb-2 text-xl text-primary">lumine과 함께 나누기</h3>
           <p className="mb-6 text-xs leading-relaxed text-onSurfaceVariant">

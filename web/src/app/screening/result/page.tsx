@@ -1,25 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useScreeningLatest } from "@/shared/hooks/use-screening-latest";
+import { AppIcon } from "@/shared/components/AppIcon";
+import { useScreeningLatest } from "@/shared/hooks/useScreeningLatest";
 
 export default function ScreeningResultPage() {
   const { data: result, isFetching } = useScreeningLatest({ refetchOnMount: "always" });
   const actions = result?.recommendedActions ?? [];
 
   return (
-    <div className="min-h-screen bg-background pb-24 pt-24 text-onSurface">
-      <header className="fixed left-0 top-0 z-50 w-full bg-background/80 backdrop-blur-xl">
-        <div className="flex items-center justify-between px-6 py-4">
-          <Link href="/screening/questions" className="-ml-2 rounded-full p-2 text-primary hover:opacity-60">
-            <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-          </Link>
-          <h1 className="absolute left-1/2 -translate-x-1/2 text-lg font-medium tracking-widest text-primary">Lumine</h1>
-          <div className="w-10" />
-        </div>
-        <div className="h-px w-full bg-surfaceContainerHigh opacity-20" />
-      </header>
-
+    <div className="min-h-screen bg-background pb-24 pt-8 text-onSurface">
       <main className="mx-auto px-6 md:max-w-2xl">
         {!result ? (
           <section className="mb-8 mt-8 rounded-[28px] bg-surfaceContainerLowest p-6 shadow-ambient">
@@ -80,9 +70,7 @@ export default function ScreeningResultPage() {
           <ul className="space-y-6">
             {actions.map((action) => (
               <li key={action} className="flex items-start">
-                <span className="material-symbols-outlined mr-4 mt-0.5 text-secondary/60" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  auto_awesome
-                </span>
+                <AppIcon name="auto-awesome" className="mr-4 mt-0.5 h-5 w-5 text-secondary/60" />
                 <div>
                   <p className="text-lg text-onSurface">{action}</p>
                 </div>

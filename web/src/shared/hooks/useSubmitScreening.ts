@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useBridgeBootstrap } from "@/shared/hooks/use-bridge-bootstrap";
+import { useBridgeBootstrap } from "@/shared/hooks/useBridgeBootstrap";
 import type { ScreeningQuestionnaire } from "@/shared/lib/api";
 import { submitScreeningContent } from "@/shared/lib/content-store";
 
