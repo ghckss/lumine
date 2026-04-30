@@ -55,10 +55,6 @@ function AppRoot() {
             session={null}
             profile={null}
             onLogout={logout}
-            onRequireAuth={() => {
-              setIsGuestMode(false);
-              setHasSeenWelcome(true);
-            }}
           />
         ) : hasSeenWelcome ? (
           <NativeAuthScreen onBack={() => setHasSeenWelcome(false)} />
@@ -87,7 +83,7 @@ function AppRoot() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={tokens.background} />
-      <WebViewContainer session={session} profile={profile} onLogout={logout} onRequireAuth={() => undefined} />
+      <WebViewContainer session={session} profile={profile} onLogout={logout} />
     </SafeAreaView>
   );
 }

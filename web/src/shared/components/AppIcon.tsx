@@ -6,8 +6,10 @@ type AppIconName =
   | "arrow-outward"
   | "auto-awesome"
   | "call"
+  | "close"
   | "emergency"
   | "health-and-safety"
+  | "menu"
   | "schedule"
   | "support-agent";
 
@@ -63,6 +65,13 @@ export function AppIcon({ name, className }: AppIconProps) {
           <path d="M5 4h3l2 5-2 1.5a15 15 0 0 0 5 5L14.5 13l5 2v3a2 2 0 0 1-2.2 2A17 17 0 0 1 4 6.2 2 2 0 0 1 5 4Z" />
         </svg>
       );
+    case "close":
+      return (
+        <svg {...commonProps} aria-hidden="true">
+          <path d="m6 6 12 12" />
+          <path d="M18 6 6 18" />
+        </svg>
+      );
     case "emergency":
       return (
         <svg {...commonProps} aria-hidden="true">
@@ -77,6 +86,14 @@ export function AppIcon({ name, className }: AppIconProps) {
           <path d="M12 3 4 7v5c0 5 3.4 8.7 8 9 4.6-.3 8-4 8-9V7l-8-4Z" />
           <path d="M12 9v6" />
           <path d="M9 12h6" />
+        </svg>
+      );
+    case "menu":
+      return (
+        <svg {...commonProps} aria-hidden="true">
+          <path d="M4 7h16" />
+          <path d="M4 12h16" />
+          <path d="M4 17h16" />
         </svg>
       );
     case "schedule":

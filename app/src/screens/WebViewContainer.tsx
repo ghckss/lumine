@@ -1,15 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, AppState, AppStateStatus, Linking, SafeAreaView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, AppState, AppStateStatus, Linking, SafeAreaView, StyleSheet, Text, View } from "react-native";
 import { WebView, WebViewMessageEvent, WebViewNavigation } from "react-native-webview";
 import { BottomTabBar, TabKey } from "../components/BottomTabBar";
 import { createAppToWebPayload, createBridgeResponsePayload, injectedBridgeScript } from "../bridge/app-to-web";
 import { handleWebToAppBridge } from "../bridge/registry";
 import type { NativeBridgeEnvelope } from "../bridge/types";
-import { MoreMenuModal } from "../components/MoreMenuModal";
 import { SupportFallback } from "../components/SupportFallback";
 import { WEB_BASE_URL } from "../config/env";
 import { tokens } from "../config/tokens";
-import { clearAllDeviceCache } from "../storage/device-cache";
 import type { LoginSession, UserProfile } from "../types/session";
 
 const tabRoutes: Record<TabKey, string> = {
@@ -17,13 +15,6 @@ const tabRoutes: Record<TabKey, string> = {
   history: "/journal/history",
   support: "/support"
 };
-
-const deviceCacheKeys = [
-  "journal.history",
-  "screening.history",
-  "screening.latest",
-  "sync.queue"
-];
 
 function getActiveTab(pathname: string): TabKey {
   if (pathname.startsWith("/journal/history")) {
@@ -39,10 +30,9 @@ type WebViewContainerProps = {
   session: LoginSession | null;
   profile: UserProfile | null;
   onLogout: () => Promise<void>;
-  onRequireAuth: () => void;
 };
 
-export function WebViewContainer({ session, profile, onLogout, onRequireAuth }: WebViewContainerProps) {
+export function WebViewContainer({ session, profile, onLogout }: WebViewContainerProps) {
   const webViewRef = useRef<WebView>(null);
   const pendingEventsRef = useRef<Array<{ command: string; params?: Record<string, unknown> }>>([]);
   const isWebReadyRef = useRef(false);
@@ -50,7 +40,6 @@ export function WebViewContainer({ session, profile, onLogout, onRequireAuth }: 
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadError, setHasLoadError] = useState(false);
   const [webViewKey, setWebViewKey] = useState(0);
-  const [isMoreVisible, setIsMoreVisible] = useState(false);
   const source = useMemo(() => ({ uri: WEB_BASE_URL }), []);
   const isGuest = !session;
 
@@ -177,22 +166,6 @@ export function WebViewContainer({ session, profile, onLogout, onRequireAuth }: 
     setWebViewKey((prev) => prev + 1);
   }, []);
 
-  const handleClearDeviceData = useCallback(() => {
-    Alert.alert("기기 저장 데이터 비우기", "이 기기에 저장된 기록과 대기 데이터를 지울까요?", [
-      { text: "취소", style: "cancel" },
-      {
-        text: "비우기",
-        style: "destructive",
-        onPress: () => {
-          void clearAllDeviceCache(deviceCacheKeys).then(() => {
-            setIsMoreVisible(false);
-            reloadWebView();
-          });
-        }
-      }
-    ]);
-  }, [reloadWebView]);
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
@@ -237,19 +210,6 @@ export function WebViewContainer({ session, profile, onLogout, onRequireAuth }: 
         </View>
 
         <BottomTabBar activeTab={activeTab} onPress={navigateToTab} />
-
-        <MoreMenuModal
-          visible={isMoreVisible}
-          isGuest={isGuest}
-          onClose={() => setIsMoreVisible(false)}
-          onConnectAccount={() => {
-            setIsMoreVisible(false);
-            if (isGuest) {
-              onRequireAuth();
-            }
-          }}
-          onClearDeviceData={handleClearDeviceData}
-        />
       </View>
     </SafeAreaView>
   );
