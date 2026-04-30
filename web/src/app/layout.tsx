@@ -2,7 +2,6 @@ import "./globals.css";
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { AppProviders } from "@/providers/app-providers";
-import { AuthGate } from "@/shared/components/AuthGate";
 import { AppHeader } from "@/shared/components/AppHeader";
 
 const appFont = Plus_Jakarta_Sans({
@@ -26,12 +25,15 @@ export default function RootLayout({
       </head>
       <body className={`${appFont.variable}`}>
         <AppProviders>
-          <AuthGate>
-            <div className="min-h-screen bg-background">
-              <AppHeader />
-              <div className="pt-16">{children}</div>
-            </div>
-          </AuthGate>
+          <div className="relative min-h-screen overflow-x-hidden bg-background">
+            <div
+              className="pointer-events-none fixed inset-0 bg-cover bg-center"
+              style={{ backgroundImage: "url('/screening-start-bg.png')" }}
+            />
+            <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(180deg,rgba(250,248,255,0.72),rgba(250,248,255,0.88))]" />
+            <AppHeader />
+            <div className="relative z-10 pt-16">{children}</div>
+          </div>
         </AppProviders>
       </body>
     </html>

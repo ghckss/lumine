@@ -3,8 +3,8 @@ import { AppIcon } from "@/shared/components/AppIcon";
 
 export default function ScreeningStartPage() {
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-background font-body text-onSurface selection:bg-primaryContainer selection:text-onPrimaryContainer">
-      <main className="relative mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-screen-md flex-col justify-center px-6 pb-32 pt-8 md:px-12">
+    <div className="min-h-screen font-body text-onSurface selection:bg-primaryContainer selection:text-onPrimaryContainer">
+      <main className="relative mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-xl flex-col justify-center px-6 pb-32 pt-8 md:px-12">
         <div className="flex flex-col space-y-16">
           <div className="space-y-8 pr-12 md:pr-24">
             <h2 className="break-keep text-[2.5rem] font-light leading-[1.4] tracking-wider text-primary">

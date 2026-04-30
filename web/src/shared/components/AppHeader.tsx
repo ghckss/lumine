@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useBridgeBootstrap } from "@/shared/hooks/useBridgeBootstrap";
@@ -154,8 +155,8 @@ export function AppHeader() {
 
   return (
     <>
-      <header className="fixed left-0 top-0 z-50 w-full border-b border-outlineVariant/50 bg-background/90 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between px-5 sm:px-6">
+      <header className="fixed left-0 top-0 z-50 w-full bg-background/90 backdrop-blur-xl border-none">
+        <div className="mx-auto flex h-16 w-full max-w-xl items-center justify-between px-5 sm:px-6">
           <div className="flex w-12 items-center justify-start">
             {config.showBack ? (
               <button
@@ -170,7 +171,9 @@ export function AppHeader() {
           </div>
 
           <div className="min-w-0 flex-1 text-center">
-            <p className="truncate text-lg font-semibold tracking-[0.14em] text-primary">{config.title}</p>
+            <Link href="/" className="inline-block max-w-full">
+              <p className="truncate text-lg font-semibold tracking-[0.14em] text-primary">{config.title}</p>
+            </Link>
             {config.subtitle ? (
               <p className="mt-0.5 truncate text-[11px] tracking-[0.18em] text-onSurfaceVariant">{config.subtitle}</p>
             ) : null}

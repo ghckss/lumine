@@ -30,8 +30,8 @@ export default function SupportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24 font-body text-onSurface">
-      <main className="mx-auto max-w-md px-6 pt-8">
+    <div className="min-h-screen pb-24 font-body text-onSurface">
+      <main className="mx-auto w-full max-w-xl px-6 pt-8">
         {fromSafetyFlow ? (
           <section className="mb-8 rounded-[28px] border border-secondary/25 bg-[linear-gradient(180deg,var(--color-secondary-container)_0%,var(--color-surface-container-lowest)_100%)] p-6 shadow-moon">
             <p className="text-xs uppercase tracking-[0.22em] text-secondary/80">care first</p>

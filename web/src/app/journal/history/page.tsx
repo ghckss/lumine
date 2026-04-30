@@ -35,8 +35,8 @@ export default function JournalHistoryPage() {
         : "큰 변화 없이 비슷한 흐름이 이어지고 있어요.";
 
   return (
-    <div className="min-h-screen bg-background text-onSurface">
-      <main className="mx-auto flex max-w-2xl flex-col gap-12 px-6 pb-32 pt-8">
+    <div className="min-h-screen text-onSurface">
+      <main className="mx-auto flex w-full max-w-xl flex-col gap-12 px-6 pb-32 pt-8">
         <section className="flex flex-col gap-6">
           <h2 className="text-2xl tracking-wide text-primary">최근 마음의 기록</h2>
           <div className="relative flex h-48 w-full items-center justify-center overflow-hidden rounded-[2rem] bg-surfaceContainerLow">

@@ -15,6 +15,8 @@ export default function ScreeningQuestionsPage() {
   const currentItem = items[currentIndex];
   const currentSectionTitle = questionnaire?.sections.find((section) => section.items.some((item) => item.id === currentItem?.id))?.title;
   const isLast = currentIndex === items.length - 1;
+  const showPreviousButton = currentIndex > 0;
+  const showTextActionButton = currentItem?.kind !== "single_choice";
 
   function goToPrevious() {
     if (currentIndex > 0) {
@@ -61,14 +63,15 @@ export default function ScreeningQuestionsPage() {
   }
 
   return (
-    <div className="relative mx-auto flex min-h-screen max-w-md flex-col overflow-x-hidden bg-background">
-      <div className="fixed left-0 top-16 z-40 h-[2px] w-full bg-surfaceContainerHigh">
-        <div className="h-full bg-primary/30 transition-all" style={{ width: `${items.length > 0 ? ((currentIndex + 1) / items.length) * 100 : 0}%` }} />
-      </div>
-
+    <div className="relative mx-auto flex min-h-screen w-full max-w-xl flex-col overflow-x-hidden">
       <main className="flex flex-1 flex-col px-8 pb-32 pt-16">
         <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center">
-          <p className="text-sm tracking-[0.24em] text-secondary/70">{currentSectionTitle ?? "지금 마음"}</p>
+          <div className="flex items-start justify-between gap-4">
+            <p className="text-sm tracking-[0.24em] text-secondary/70">{currentSectionTitle ?? "지금 마음"}</p>
+            <span className="pt-0.5 text-sm tracking-widest text-onSurfaceVariant/60">
+              {items.length > 0 ? `${String(currentIndex + 1).padStart(2, "0")} / ${String(items.length).padStart(2, "0")}` : "00 / 00"}
+            </span>
+          </div>
           <h2 className="mb-6 mt-8 text-left text-4xl font-light leading-[1.6] tracking-widest text-primary">{currentItem?.title ?? "질문을 불러오고 있어요"}</h2>
           {currentItem?.description ? <p className="mb-10 text-sm leading-7 text-onSurfaceVariant">{currentItem.description}</p> : null}
 
@@ -98,32 +101,31 @@ export default function ScreeningQuestionsPage() {
               value={answers[currentItem.id] ?? ""}
               onChange={(event) => setAnswers((prev) => ({ ...prev, [currentItem.id]: event.target.value }))}
               className="min-h-56 w-full rounded-[28px] border border-outlineVariant/40 bg-surfaceContainerLowest px-6 py-5 text-base text-onSurface outline-none placeholder:text-onSurfaceVariant/70"
-              placeholder="괜찮은 만큼만 적어도 돼요."
+              placeholder="오늘 있었던 일을 알려주세요."
             />
           ) : null}
         </div>
       </main>
 
-      <div className="fixed bottom-0 left-0 right-0 z-40 mx-auto flex max-w-md items-center justify-between bg-gradient-to-t from-background via-background/90 to-transparent px-8 pb-12 pt-8">
-        <span className="text-sm tracking-widest text-onSurfaceVariant/60">
-          {items.length > 0 ? `${String(currentIndex + 1).padStart(2, "0")} / ${String(items.length).padStart(2, "0")}` : "00 / 00"}
-        </span>
-        <div className="flex w-full max-w-[280px] justify-end gap-3">
-          {currentIndex > 0 ? (
+      <div className="fixed bottom-0 left-0 right-0 z-40 mx-auto flex w-full max-w-xl items-center justify-between bg-gradient-to-t from-background via-background/90 to-transparent px-8 pb-12 pt-8">
+        <div
+          className={`${showPreviousButton && showTextActionButton ? "grid grid-cols-2" : "flex justify-end"} w-full gap-3`}
+        >
+          {showPreviousButton ? (
             <button
               type="button"
               onClick={goToPrevious}
-              className="rounded-full bg-surfaceContainerLowest px-5 py-4 text-center text-sm font-medium tracking-widest text-primary transition-colors duration-500 ease-out hover:bg-surfaceContainerLow"
+              className="w-full rounded-full bg-surfaceContainerLowest px-5 py-4 text-center text-sm font-medium tracking-widest text-primary transition-colors duration-500 ease-out hover:bg-surfaceContainerLow"
             >
               이전 질문
             </button>
           ) : null}
-          {currentItem?.kind !== "single_choice" ? (
+          {showTextActionButton ? (
             <button
               type="button"
               onClick={handleNext}
               disabled={submitScreening.isPending || (currentItem?.required && !answers[currentItem.id])}
-              className="w-full max-w-[200px] rounded-full bg-secondaryContainer py-4 text-center text-sm font-medium tracking-widest text-tertiary transition-colors duration-500 ease-out hover:bg-tertiaryContainer disabled:opacity-50"
+              className={`${showPreviousButton ? "w-full" : "max-w-[200px]"} rounded-full bg-secondaryContainer px-5 py-4 text-center text-sm font-medium tracking-widest text-tertiary transition-colors duration-500 ease-out hover:bg-tertiaryContainer disabled:opacity-50`}
             >
               {isLast ? (submitScreening.isPending ? "정리하는 중" : "결과 보기") : "다음으로"}
             </button>

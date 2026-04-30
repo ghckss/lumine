@@ -198,7 +198,7 @@ class ScreeningService(
                             id = "n1",
                             kind = "long_text",
                             title = "요즘 가장 자주 마음에 남는 일이 있다면 적어볼래요?",
-                            description = "필수는 아니에요. 괜찮은 만큼만 적어도 돼요",
+                            description = "요즘 드는 생각을 알려주세요. 필수는 아니에요.",
                             required = false
                         )
                     )

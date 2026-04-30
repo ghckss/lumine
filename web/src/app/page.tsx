@@ -72,6 +72,18 @@ type Ripple = {
   delay: number;
 };
 
+function isRescreenAvailable(completedDate: string | null | undefined, today: string) {
+  if (!completedDate) {
+    return true;
+  }
+
+  const lastScreeningDate = new Date(`${completedDate}T00:00:00+09:00`);
+  const nextAvailableDate = new Date(lastScreeningDate);
+  nextAvailableDate.setMonth(nextAvailableDate.getMonth() + 1);
+
+  return new Date(`${today}T00:00:00+09:00`) >= nextAvailableDate;
+}
+
 export default function HomePage() {
   const areaRef = useRef<HTMLDivElement | null>(null);
   const rippleIdRef = useRef(0);
@@ -84,6 +96,8 @@ export default function HomePage() {
   const { data: journalHistory } = useJournalHistory(10);
   const { data: screeningHistory } = useScreeningHistory();
 
+  const latestScreeningDate = screeningHistory?.[0]?.completedDate ?? null;
+  const canShowPrimaryScreeningButton = isRescreenAvailable(latestScreeningDate, today);
   const hasCompletedScreeningToday = screeningHistory?.[0]?.completedDate === today;
   const hasCompletedJournalToday = Boolean(todayJournalEntry);
   const completedCount = Number(hasCompletedScreeningToday) + Number(hasCompletedJournalToday);
@@ -180,7 +194,7 @@ export default function HomePage() {
       </header>
 
       <div className="grid gap-4">
-        {!hasCompletedScreeningToday ? <PrimaryButton href="/screening/start">나를 돌아보기</PrimaryButton> : null}
+        {canShowPrimaryScreeningButton ? <PrimaryButton href="/screening/start">나를 돌아보기</PrimaryButton> : null}
         {!hasCompletedJournalToday ? <PrimaryButton href="/journal" secondary>감정 일기 쓰기</PrimaryButton> : null}
 
         <section className="grid gap-3">
@@ -204,7 +218,7 @@ export default function HomePage() {
         <SurfaceCard className="bg-surfaceContainerLowest">
           <h2 className="mt-3 mb-3 text-[1.8rem] leading-[1.3] text-onSurface">오늘도 고생했어요</h2>
           <div className="grid gap-4 sm:grid-cols-2">
-            <SurfaceCard className="border border-outlineVariant/70 bg-[linear-gradient(180deg,var(--color-surface-container-lowest)_0%,var(--color-secondary-container)_100%)] shadow-moon">
+            <SurfaceCard className="flex h-full flex-col border border-outlineVariant/70 bg-[linear-gradient(180deg,var(--color-surface-container-lowest)_0%,var(--color-secondary-container)_100%)] shadow-moon">
               <h3 className="mt-3 text-[1.5rem] leading-[1.35] text-onSurface">{moodPreview.length > 0 ? "최근 머문 감정이에요" : "감정이 쌓이면 흐름이 보여요"}</h3>
               <p className="mt-3 text-sm leading-7 text-onSurfaceVariant">
                 {moodPreview.length > 0
@@ -228,13 +242,23 @@ export default function HomePage() {
                   ))}
                 </div>
               ) : null}
+              {!canShowPrimaryScreeningButton ? (
+                <div className="mt-auto flex justify-end pt-6">
+                  <Link
+                    href="/screening/start"
+                    className="inline-flex rounded-full bg-surfaceContainerLowest px-4 py-2 text-xs font-semibold text-secondary transition-colors hover:bg-white"
+                  >
+                    심리 검사 다시 보기
+                  </Link>
+                </div>
+              ) : null}
             </SurfaceCard>
 
             <Link href="/journal/history">
-              <SurfaceCard className="h-full border border-outlineVariant/70 bg-[linear-gradient(180deg,var(--color-surface-container-lowest)_0%,var(--color-secondary-container)_100%)] shadow-moon transition hover:-translate-y-0.5">
+              <SurfaceCard className="flex h-full flex-col border border-outlineVariant/70 bg-[linear-gradient(180deg,var(--color-surface-container-lowest)_0%,var(--color-secondary-container)_100%)] shadow-moon transition hover:-translate-y-0.5">
                 <h3 className="mt-3 text-[1.5rem] leading-[1.35] text-onSurface">모아둔 기록을 다시 펼쳐봐요</h3>
                 <p className="mt-3 text-sm leading-7 text-onSurfaceVariant">최근 감정의 흐름과 자주 머문 결을 한 번에 볼 수 있어요.</p>
-                <div className="mt-6 flex justify-end">
+                <div className="mt-auto flex justify-end pt-6">
                   <span className="inline-flex rounded-full bg-surfaceContainerLowest px-4 py-2 text-xs font-semibold text-secondary">지난 기록 보기</span>
                 </div>
               </SurfaceCard>
