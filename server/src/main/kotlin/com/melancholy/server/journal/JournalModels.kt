@@ -22,8 +22,9 @@ data class JournalEntryResponse(
 data class JournalEntryRequest(
     val date: LocalDate?,
     @field:NotEmpty
-    @field:Size(min = 3, max = 3)
+    @field:Size(min = 1, max = 3)
     val emotions: List<@NotBlank String>,
+    @field:NotBlank
     val body: String = ""
 )
 

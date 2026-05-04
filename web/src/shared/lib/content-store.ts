@@ -122,10 +122,6 @@ function evaluateGuestScreening(
 }
 
 export async function getJournalEntryContent(date: string, mode: BootstrapMode) {
-  if (mode === "guest") {
-    return getDeviceValue<JournalEntry>(journalEntryKey(date));
-  }
-
   try {
     const entry = await api.getJournalEntry(date);
     if (entry) {
@@ -138,11 +134,6 @@ export async function getJournalEntryContent(date: string, mode: BootstrapMode) 
 }
 
 export async function getJournalHistoryContent(mode: BootstrapMode, limit = 10) {
-  if (mode === "guest") {
-    const entries = (await getDeviceValue<JournalEntry[]>(JOURNAL_HISTORY_KEY)) ?? [];
-    return entries.slice(0, limit);
-  }
-
   try {
     const entries = await api.getJournalHistory(limit);
     await setDeviceValue(JOURNAL_HISTORY_KEY, entries);
@@ -157,7 +148,18 @@ export async function saveJournalEntryContent(
   payload: { date: string; emotions: string[]; body: string },
   mode: BootstrapMode
 ) {
-  if (mode === "guest") {
+  try {
+    const entry = await api.saveJournalEntry(payload);
+    const history = (await getDeviceValue<JournalEntry[]>(JOURNAL_HISTORY_KEY)) ?? [];
+    const nextHistory = [entry, ...history.filter((item) => item.date !== entry.date)].slice(0, 30);
+    await setDeviceValue(journalEntryKey(entry.date), entry);
+    await setDeviceValue(JOURNAL_HISTORY_KEY, nextHistory);
+    return entry;
+  } catch {
+    if (mode !== "guest") {
+      throw new Error("감정 기록을 저장하지 못했습니다.");
+    }
+
     const entry: JournalEntry = {
       date: payload.date,
       emotions: payload.emotions.map((emotion, index) => ({ id: `${payload.date}-${index}`, label: emotion })),
@@ -176,13 +178,6 @@ export async function saveJournalEntryContent(
     });
     return entry;
   }
-
-  const entry = await api.saveJournalEntry(payload);
-  const history = (await getDeviceValue<JournalEntry[]>(JOURNAL_HISTORY_KEY)) ?? [];
-  const nextHistory = [entry, ...history.filter((item) => item.date !== entry.date)].slice(0, 30);
-  await setDeviceValue(journalEntryKey(entry.date), entry);
-  await setDeviceValue(JOURNAL_HISTORY_KEY, nextHistory);
-  return entry;
 }
 
 export async function getScreeningLatestContent(mode: BootstrapMode) {

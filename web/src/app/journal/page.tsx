@@ -48,6 +48,7 @@ export default function JournalPage() {
   const [customEmotion, setCustomEmotion] = useState("");
   const [body, setBody] = useState("");
   const [comfortOverlay, setComfortOverlay] = useState<string | null>(null);
+  const [bodyNotice, setBodyNotice] = useState<string | null>(null);
 
   const customSelectedEmotions = selectedEmotions.filter(
     (emotion) => !positiveEmotionOptions.includes(emotion) && !heavyEmotionOptions.includes(emotion)
@@ -78,10 +79,16 @@ export default function JournalPage() {
   }
 
   async function handleSave() {
-    if (selectedEmotions.length !== 3 || saveJournalEntry.isPending) {
+    if (selectedEmotions.length < 1 || saveJournalEntry.isPending) {
       return;
     }
 
+    if (!body.trim()) {
+      setBodyNotice("오늘 있었던 일을 적어주세요.");
+      return;
+    }
+
+    setBodyNotice(null);
     const start = Date.now();
     setComfortOverlay("오늘 마음을 조용히 담아둘게요.");
 
@@ -100,7 +107,7 @@ export default function JournalPage() {
 
     window.setTimeout(() => {
       setComfortOverlay(null);
-      router.replace("/");
+      router.replace(`/journal/history/${result.date}?source=write`);
     }, 1200);
   }
 
@@ -151,7 +158,7 @@ export default function JournalPage() {
 
       <SurfaceCard>
         <p className="text-sm text-onSurfaceVariant">{formatKoreanDate(today)}</p>
-        <h2 className="mt-3 text-[1.75rem] leading-[1.45] text-onSurface">오늘 감정 세 가지를 골라볼까요</h2>
+        <h2 className="mt-3 text-[1.75rem] leading-[1.45] text-onSurface">오늘 감정을 골라볼까요</h2>
 
         <div className="mt-5 grid gap-5">
           <div>
@@ -221,23 +228,35 @@ export default function JournalPage() {
           </div>
         ) : null}
 
-        <p className="mt-4 text-sm leading-7 text-onSurfaceVariant">긍정적인 감정도 괜찮고, 직접 적어도 괜찮아요. 세 개까지 고를 수 있어요.</p>
+        <p className="mt-4 text-sm leading-7 text-onSurfaceVariant">하나만 골라도 괜찮고, 긍정적인 감정이나 직접 적은 감정도 괜찮아요. 세 개까지 고를 수 있어요.</p>
       </SurfaceCard>
 
       <SurfaceCard>
         <h3 className="text-[1.55rem] leading-[1.45] text-onSurface">오늘 있었던 일을 남겨봐요</h3>
         <textarea
           value={body}
-          onChange={(event) => setBody(event.target.value)}
-          className="mt-5 min-h-56 w-full rounded-[24px] border border-outlineVariant/30 bg-surfaceContainerLow px-4 py-4 text-base outline-none placeholder:text-onSurfaceVariant/70"
+          onChange={(event) => {
+            setBody(event.target.value);
+            if (event.target.value.trim()) {
+              setBodyNotice(null);
+            }
+          }}
+          className={`mt-5 min-h-56 w-full rounded-[24px] border px-4 py-4 text-base outline-none placeholder:text-onSurfaceVariant/70 ${
+            bodyNotice
+              ? "border-error/50 bg-errorContainer/40 text-onSurface"
+              : "border-outlineVariant/30 bg-surfaceContainerLow"
+          }`}
           placeholder="오늘은 어떤 일이 있으셨나요? 저에게만 알려주세요."
         />
+        {bodyNotice ? (
+          <p className="mt-3 text-sm text-error">{bodyNotice}</p>
+        ) : null}
       </SurfaceCard>
 
       <button
         type="button"
         onClick={handleSave}
-        disabled={selectedEmotions.length !== 3 || saveJournalEntry.isPending}
+        disabled={selectedEmotions.length < 1 || !body.trim() || saveJournalEntry.isPending}
         className="flex h-14 w-full items-center justify-center rounded-full bg-gradient-to-br from-primary to-primaryContainer px-5 text-sm font-semibold text-white shadow-moon disabled:opacity-50"
       >
         {saveJournalEntry.isPending ? "저장하고 있어요" : "오늘 기록 남기기"}

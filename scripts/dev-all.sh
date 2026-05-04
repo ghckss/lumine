@@ -24,11 +24,30 @@ run_bg() {
   PIDS+=("$!")
 }
 
-run_bg server /bin/zsh -lc "cd '$ROOT_DIR/server' && GRADLE_USER_HOME=/tmp/gradle-home JAVA_TOOL_OPTIONS='-Djava.io.tmpdir=/tmp' /tmp/gradle-8.10.2/bin/gradle --project-cache-dir /tmp/gradle-project-cache bootRun"
+wait_for_http() {
+  local name="$1"
+  local url="$2"
+  local attempts="${3:-60}"
+
+  for _ in $(seq 1 "$attempts"); do
+    if curl -fsS "$url" >/dev/null 2>&1; then
+      echo "[lumine] ${name} is ready"
+      return 0
+    fi
+    sleep 1
+  done
+
+  echo "[lumine] ${name} failed to become ready: ${url}" >&2
+  return 1
+}
+
+run_bg server /bin/zsh -lc "cd '$ROOT_DIR' && ./scripts/run-server-dev.sh"
 run_bg web /bin/zsh -lc "cd '$ROOT_DIR/web' && npm run dev"
 run_bg metro /bin/zsh -lc "cd '$ROOT_DIR/app' && pnpm start"
 
-sleep 8
+wait_for_http server "http://127.0.0.1:8080/api/screening/questionnaire"
+wait_for_http web "http://127.0.0.1:3005"
+sleep 3
 
 echo "[lumine] launching ios"
 (

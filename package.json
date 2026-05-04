@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "dev:web": "cd web && npm run dev",
-    "dev:server": "cd server && GRADLE_USER_HOME=/tmp/gradle-home JAVA_TOOL_OPTIONS='-Djava.io.tmpdir=/tmp' /tmp/gradle-8.10.2/bin/gradle --project-cache-dir /tmp/gradle-project-cache bootRun",
+    "dev:server": "./scripts/run-server-dev.sh",
     "dev:metro": "cd app && pnpm start",
     "dev:ios": "cd app && pnpm ios:no-packager",
     "dev:android": "cd app && pnpm android:no-packager",
