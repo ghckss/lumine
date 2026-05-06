@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/melancholy}
-    username: ${DB_USERNAME:melancholy}
-    password: ${DB_PASSWORD:melancholy}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/lumine}
+    username: ${DB_USERNAME:lumine}
+    password: ${DB_PASSWORD:lumine}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:

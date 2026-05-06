@@ -19,7 +19,7 @@ React Native 셸입니다.
 
 ## 의존성 설치
 ```bash
-cd /Users/hwanghochan/workspace/melancholy/app
+cd /Users/hwanghochan/workspace/lumine/app
 pnpm install
 ```
 
@@ -49,14 +49,14 @@ iOS는 추가로 아래 둘 중 하나가 필요해요.
 
 ## Metro 실행
 ```bash
-cd /Users/hwanghochan/workspace/melancholy/app
+cd /Users/hwanghochan/workspace/lumine/app
 pnpm start
 ```
 
 ## iOS 실행
 최초 1회 pod 설치:
 ```bash
-cd /Users/hwanghochan/workspace/melancholy/app
+cd /Users/hwanghochan/workspace/lumine/app
 bundle install
 cd ios
 RUBYOPT=-rlogger bundle exec pod install
@@ -65,13 +65,13 @@ cd ..
 
 실행:
 ```bash
-cd /Users/hwanghochan/workspace/melancholy/app
+cd /Users/hwanghochan/workspace/lumine/app
 pnpm ios
 ```
 
 ## Android 실행
 ```bash
-cd /Users/hwanghochan/workspace/melancholy/app
+cd /Users/hwanghochan/workspace/lumine/app
 pnpm android
 ```
 

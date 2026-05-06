@@ -1,8 +1,8 @@
 spring:
   application:
-    name: melancholy-server
+    name: lumine-server
   datasource:
-    url: jdbc:h2:mem:melancholy;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    url: jdbc:h2:mem:lumine;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     driver-class-name: org.h2.Driver
     username: sa
     password:

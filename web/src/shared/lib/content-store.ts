@@ -45,20 +45,15 @@ function journalEntryKey(date: string) {
 }
 
 function comfortMessageForGuest(emotions: string[]) {
-  const warm = ["기쁨", "행복", "안도감", "편안함", "고마움", "설렘", "즐거움"];
   const heavy = ["지침", "답답함", "무거움", "불안함", "외로움", "분노", "괴로움", "서운함"];
-  const warmCount = emotions.filter((emotion) => warm.includes(emotion)).length;
   const heavyCount = emotions.filter((emotion) => heavy.includes(emotion)).length;
+  const leadEmotion = emotions[0] ?? "마음";
 
-  if (warmCount >= 2 && heavyCount === 0) {
-    return "오늘의 따뜻한 결을 잘 남겨두었어요. 이 작은 빛이 오래 머물 수 있으면 좋겠어요.";
+  if (heavyCount > 0) {
+    return `오늘 ${leadEmotion}이 오래 머물렀다면, 그 마음을 견디느라 많이 애썼을 거예요.`;
   }
 
-  if (heavyCount >= 2) {
-    return "무거운 마음을 여기까지 데려와줘서 고마워요. 오늘은 이 기록만으로도 충분해요.";
-  }
-
-  return "여러 감정이 함께 지나간 하루였네요. 지금 남겨둔 마음이 나중의 당신을 조금 더 다정하게 비춰줄 거예요.";
+  return "오늘 마음을 여기까지 데려오느라 애썼어요. 잠시 그대로 쉬어가도 괜찮아요.";
 }
 
 function addWeeks(date: Date, weeks: number) {

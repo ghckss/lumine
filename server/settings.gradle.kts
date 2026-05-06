@@ -1,1 +1,1 @@
-rootProject.name = "melancholy-server"
+rootProject.name = "lumine-server"

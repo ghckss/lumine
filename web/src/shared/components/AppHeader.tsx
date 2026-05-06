@@ -46,33 +46,33 @@ const privacySections = [
 function getHeaderConfig(pathname: string, displayName: string | null): HeaderConfig {
   if (pathname === "/") {
     return {
-      title: "Lumis Eterne",
+      title: "Lumine",
       subtitle: displayName ? `${displayName}님, 오늘의 마음` : "오늘의 마음"
     };
   }
 
   if (pathname.startsWith("/journal/history")) {
-    return { title: "Lumis Eterne", subtitle: "기록의 숨결", showBack: true, fallbackHref: "/" };
+    return { title: "Lumine", subtitle: "기록의 숨결", showBack: true, fallbackHref: "/" };
   }
 
   if (pathname.startsWith("/journal")) {
-    return { title: "Lumis Eterne", subtitle: "감정 일기", showBack: true, fallbackHref: "/" };
+    return { title: "Lumine", subtitle: "감정 일기", showBack: true, fallbackHref: "/" };
   }
 
   if (pathname.startsWith("/screening/questions")) {
-    return { title: "Lumis Eterne", subtitle: "마음 살펴보기", showBack: true, fallbackHref: "/screening/start" };
+    return { title: "Lumine", subtitle: "마음 살펴보기", showBack: true, fallbackHref: "/screening/start" };
   }
 
   if (pathname.startsWith("/screening/result")) {
-    return { title: "Lumis Eterne", subtitle: "분석 결과", showBack: true, fallbackHref: "/screening/questions" };
+    return { title: "Lumine", subtitle: "분석 결과", showBack: true, fallbackHref: "/screening/questions" };
   }
 
   if (pathname.startsWith("/screening/start")) {
-    return { title: "Lumis Eterne", subtitle: "마음 살펴보기", showBack: true, fallbackHref: "/" };
+    return { title: "Lumine", subtitle: "마음 살펴보기", showBack: true, fallbackHref: "/" };
   }
 
   if (pathname.startsWith("/support")) {
-    return { title: "Lumis Eterne", subtitle: "마음으로 잇는 연결", showBack: true, fallbackHref: "/" };
+    return { title: "Lumine", subtitle: "마음으로 잇는 연결", showBack: true, fallbackHref: "/" };
   }
 
   return { title: "Lumine" };
@@ -209,7 +209,7 @@ export function AppHeader() {
           >
             <div className="flex w-full items-start justify-between">
               <div>
-                <p className="text-xs uppercase tracking-[0.22em] text-primary/70">lumis eterne</p>
+                <p className="text-xs uppercase tracking-[0.22em] text-primary/70">Lumine</p>
                 <p className="mt-3 text-3xl font-semibold text-onSurface">추가 기능</p>
                 <p className="mt-3 text-sm leading-7 text-onSurfaceVariant">
                   조용히 이어가기 위한 안내와 기기 설정을 여기에서 다룰게요.

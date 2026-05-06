@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { AppProviders } from "@/providers/app-providers";
 import { AppHeader } from "@/shared/components/AppHeader";
+import { FloatingWarmPhrase } from "@/shared/components/FloatingWarmPhrase";
 
 const appFont = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -33,6 +34,7 @@ export default function RootLayout({
             <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(180deg,rgba(250,248,255,0.72),rgba(250,248,255,0.88))]" />
             <AppHeader />
             <div className="relative z-10 pt-16">{children}</div>
+            <FloatingWarmPhrase />
           </div>
         </AppProviders>
       </body>

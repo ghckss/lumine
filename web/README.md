@@ -8,13 +8,13 @@ Next.js 기반 웹 앱입니다.
 
 ## 의존성 설치
 ```bash
-cd /Users/hwanghochan/workspace/melancholy/web
+cd /Users/hwanghochan/workspace/lumine/web
 npm install
 ```
 
 ## 개발 서버 실행
 ```bash
-cd /Users/hwanghochan/workspace/melancholy/web
+cd /Users/hwanghochan/workspace/lumine/web
 npm run dev
 ```
 
@@ -29,7 +29,7 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
 
 ## 프로덕션 실행
 ```bash
-cd /Users/hwanghochan/workspace/melancholy/web
+cd /Users/hwanghochan/workspace/lumine/web
 npm run build
 npm run start
 ```

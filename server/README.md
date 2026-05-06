@@ -14,7 +14,7 @@ Spring Boot + Kotlin 서버입니다.
 
 ## 기본 실행(H2)
 ```bash
-cd /Users/hwanghochan/workspace/melancholy/server
+cd /Users/hwanghochan/workspace/lumine/server
 GRADLE_USER_HOME=/tmp/gradle-home JAVA_TOOL_OPTIONS='-Djava.io.tmpdir=/tmp' /tmp/gradle-8.10.2/bin/gradle --project-cache-dir /tmp/gradle-project-cache bootRun
 ```
 
@@ -22,25 +22,25 @@ GRADLE_USER_HOME=/tmp/gradle-home JAVA_TOOL_OPTIONS='-Djava.io.tmpdir=/tmp' /tmp
 기본 접속 정보:
 - host: `localhost`
 - port: `5432`
-- db: `melancholy`
-- user: `melancholy`
-- password: `melancholy`
+- db: `lumine`
+- user: `lumine`
+- password: `lumine`
 
 ```bash
-cd /Users/hwanghochan/workspace/melancholy/server
+cd /Users/hwanghochan/workspace/lumine/server
 GRADLE_USER_HOME=/tmp/gradle-home JAVA_TOOL_OPTIONS='-Djava.io.tmpdir=/tmp' /tmp/gradle-8.10.2/bin/gradle --project-cache-dir /tmp/gradle-project-cache bootRun --args='--spring.profiles.active=postgres'
 ```
 
 환경변수로 덮어쓸 수도 있습니다.
 ```bash
-export DB_URL=jdbc:postgresql://localhost:5432/melancholy
-export DB_USERNAME=melancholy
-export DB_PASSWORD=melancholy
+export DB_URL=jdbc:postgresql://localhost:5432/lumine
+export DB_USERNAME=lumine
+export DB_PASSWORD=lumine
 ```
 
 ## 테스트 실행
 ```bash
-cd /Users/hwanghochan/workspace/melancholy/server
+cd /Users/hwanghochan/workspace/lumine/server
 GRADLE_USER_HOME=/tmp/gradle-home JAVA_TOOL_OPTIONS='-Djava.io.tmpdir=/tmp' /tmp/gradle-8.10.2/bin/gradle --project-cache-dir /tmp/gradle-project-cache test
 ```
 

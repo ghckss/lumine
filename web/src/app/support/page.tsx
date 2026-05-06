@@ -2,10 +2,19 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { AppIcon } from "@/shared/components/AppIcon";
 import { useSupportResources } from "@/shared/hooks/useSupportResources";
 
 export default function SupportPage() {
+  return (
+    <Suspense fallback={null}>
+      <SupportPageContent />
+    </Suspense>
+  );
+}
+
+function SupportPageContent() {
   const searchParams = useSearchParams();
   const { data: resources = [] } = useSupportResources();
   const primaryResource = resources[0];
