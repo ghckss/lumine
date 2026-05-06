@@ -1,16 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useJournalHistory } from "@/shared/hooks/useJournalHistory";
-import { formatKoreanDate } from "@/shared/lib/date";
+import { JournalHistoryActions } from "./_component/JournalHistoryActions";
+import { JournalHistoryListSection } from "./_component/JournalHistoryListSection";
+import { JournalHistorySummarySection } from "./_component/JournalHistorySummarySection";
 
 const positiveEmotions = new Set(["차분함", "안도감", "기쁨", "즐거움", "행복", "고마움", "편안함", "설렘", "평온함"]);
-
-function getEmotionTone(label: string) {
-  return positiveEmotions.has(label)
-    ? { textClass: "text-primary", bgClass: "bg-primaryFixed" }
-    : { textClass: "text-secondary", bgClass: "bg-secondaryContainer" };
-}
 
 export default function JournalHistoryPage() {
   const { data: entries = [], isFetching } = useJournalHistory(10, { refetchOnMount: "always" });
@@ -37,64 +32,13 @@ export default function JournalHistoryPage() {
   return (
     <div className="min-h-screen text-onSurface">
       <main className="mx-auto flex w-full max-w-xl flex-col gap-12 px-6 pb-32 pt-8">
-        <section className="flex flex-col gap-6">
-          <h2 className="text-2xl tracking-wide text-primary">최근 마음의 기록</h2>
-          {isFetching ? (
-            <p className="text-xs tracking-[0.18em] text-onSurfaceVariant/70">최근 기록을 다시 확인하고 있어요.</p>
-          ) : null}
-          <div className="relative flex h-48 w-full items-center justify-center overflow-hidden rounded-[2rem] bg-surfaceContainerLow">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,var(--color-primary-fixed)_0%,var(--color-secondary-container)_45%,var(--color-surface-container)_100%)] opacity-80 mix-blend-multiply" />
-            <div className="relative z-10 flex flex-col items-center gap-3 rounded-2xl border border-background/50 bg-background/40 p-6 shadow-moon backdrop-blur-md">
-              <span className="text-lg tracking-wider text-primaryContainer">주로 머문 감정</span>
-              <div className="flex gap-4">
-                {recentTopEmotions.map((emotion) => (
-                  <span key={emotion} className="rounded-full bg-background/80 px-4 py-1.5 text-sm tracking-widest text-primary shadow-sm">
-                    {emotion}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-          <p className="border-l-2 border-primary/20 pl-2 text-sm leading-loose text-onSurfaceVariant">{trendMessage}</p>
-        </section>
-
-        <section className="flex flex-col gap-8">
-          {entries.length === 0 ? (
-            <section className="rounded-[1.5rem] bg-surfaceContainerLowest p-8 shadow-ambient">
-              <p className="text-base leading-8 text-onSurface">아직 남겨진 기록이 없어요.</p>
-              <p className="mt-3 text-sm leading-7 text-onSurfaceVariant">첫 기록을 남기면 감정의 흐름을 여기에서 다시 펼쳐볼 수 있어요.</p>
-              <div className="mt-6 flex justify-end">
-                <Link href="/screening/start" className="inline-flex rounded-full bg-primary px-5 py-3 text-sm font-semibold text-white">
-                  심리 검사하러 가기
-                </Link>
-              </div>
-            </section>
-          ) : null}
-          {entries.map((entry) => {
-            const leadEmotion = entry.emotions[0]?.label ?? "기록";
-            const { textClass, bgClass } = getEmotionTone(leadEmotion);
-            return (
-              <Link key={`${entry.date}-${entry.createdAt}`} href={`/journal/history/${entry.date}`} className="block">
-                <article className="group flex flex-col gap-5 rounded-[1.5rem] bg-surfaceContainerLowest p-8 transition-all duration-500 hover:shadow-moon">
-                  <header className="flex items-center justify-between">
-                    <time className="text-sm tracking-widest text-onSurfaceVariant/70">{formatKoreanDate(entry.date)}</time>
-                    <div className={`rounded-full px-3 py-1 text-xs tracking-wider transition-colors duration-300 ${textClass} ${bgClass}`}>
-                      {leadEmotion}
-                    </div>
-                  </header>
-                  <div className="h-px w-12 bg-primary/10" />
-                  <p className="line-clamp-2 text-base leading-[1.8] tracking-wide text-onSurface">{entry.body}</p>
-                </article>
-              </Link>
-            );
-          })}
-        </section>
-
-        <div className="flex justify-end">
-          <Link href="/journal" className="rounded-full bg-primary px-6 py-3 text-sm text-white">
-            새 기록 남기기
-          </Link>
-        </div>
+        <JournalHistorySummarySection
+          isFetching={isFetching}
+          recentTopEmotions={recentTopEmotions}
+          trendMessage={trendMessage}
+        />
+        <JournalHistoryListSection entries={entries} />
+        <JournalHistoryActions />
       </main>
     </div>
   );

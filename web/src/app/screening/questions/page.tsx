@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useScreeningQuestionnaire } from "@/shared/hooks/useScreeningQuestionnaire";
 import { useSubmitScreening } from "@/shared/hooks/useSubmitScreening";
+import { ScreeningQuestionActions } from "./_component/ScreeningQuestionActions";
+import { ScreeningQuestionSection } from "./_component/ScreeningQuestionSection";
 
 export default function ScreeningQuestionsPage() {
   const router = useRouter();
@@ -64,74 +66,25 @@ export default function ScreeningQuestionsPage() {
 
   return (
     <div className="relative mx-auto flex min-h-screen w-full max-w-xl flex-col overflow-x-hidden">
-      <main className="flex flex-1 flex-col px-8 pb-32 pt-16">
-        <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center">
-          <div className="flex items-start justify-between gap-4">
-            <p className="text-sm tracking-[0.24em] text-secondary/70">{currentSectionTitle ?? "지금 마음"}</p>
-            <span className="pt-0.5 text-sm tracking-widest text-onSurfaceVariant/60">
-              {items.length > 0 ? `${String(currentIndex + 1).padStart(2, "0")} / ${String(items.length).padStart(2, "0")}` : "00 / 00"}
-            </span>
-          </div>
-          <h2 className="mb-6 mt-8 text-left text-4xl font-light leading-[1.6] tracking-widest text-primary">{currentItem?.title ?? "질문을 불러오고 있어요"}</h2>
-          {currentItem?.description ? <p className="mb-10 text-sm leading-7 text-onSurfaceVariant">{currentItem.description}</p> : null}
-
-          {!questionnaire && !currentItem ? (
-            <p className="mb-10 text-sm leading-7 text-onSurfaceVariant">질문을 천천히 불러오고 있어요.</p>
-          ) : null}
-
-          {currentItem?.kind === "single_choice" ? (
-            <div className="flex w-full flex-col items-start gap-6 pl-4">
-              {currentItem.options.map((option, index) => {
-                const widthClass = ["w-4/5 ml-auto", "w-3/4", "w-5/6 ml-4", "w-3/4 ml-auto"][index % 4];
-                const active = answers[currentItem.id] === option.value;
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => void handleSelectOption(option.value)}
-                    className={`${widthClass} flex items-center justify-center rounded-full px-8 py-5 text-left transition-all duration-500 ease-out ${active ? "bg-primary text-white shadow-moon" : "bg-surfaceContainerLowest text-primary hover:bg-surfaceContainerLow"}`}
-                  >
-                    <span className="text-lg font-medium tracking-wider">{option.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          ) : currentItem ? (
-            <textarea
-              value={answers[currentItem.id] ?? ""}
-              onChange={(event) => setAnswers((prev) => ({ ...prev, [currentItem.id]: event.target.value }))}
-              className="min-h-56 w-full rounded-[28px] border border-outlineVariant/40 bg-surfaceContainerLowest px-6 py-5 text-base text-onSurface outline-none placeholder:text-onSurfaceVariant/70"
-              placeholder="오늘 있었던 일을 알려주세요."
-            />
-          ) : null}
-        </div>
-      </main>
-
-      <div className="fixed bottom-0 left-0 right-0 z-40 mx-auto flex w-full max-w-xl items-center justify-between bg-gradient-to-t from-background via-background/90 to-transparent px-8 pb-12 pt-8">
-        <div
-          className={`${showPreviousButton && showTextActionButton ? "grid grid-cols-2" : "flex justify-end"} w-full gap-3`}
-        >
-          {showPreviousButton ? (
-            <button
-              type="button"
-              onClick={goToPrevious}
-              className="w-full rounded-full bg-surfaceContainerLowest px-5 py-4 text-center text-sm font-medium tracking-widest text-primary transition-colors duration-500 ease-out hover:bg-surfaceContainerLow"
-            >
-              이전 질문
-            </button>
-          ) : null}
-          {showTextActionButton ? (
-            <button
-              type="button"
-              onClick={handleNext}
-              disabled={submitScreening.isPending || (currentItem?.required && !answers[currentItem.id])}
-              className={`${showPreviousButton ? "w-full" : "max-w-[200px]"} rounded-full bg-secondaryContainer px-5 py-4 text-center text-sm font-medium tracking-widest text-tertiary transition-colors duration-500 ease-out hover:bg-tertiaryContainer disabled:opacity-50`}
-            >
-              {isLast ? (submitScreening.isPending ? "정리하는 중" : "결과 보기") : "다음으로"}
-            </button>
-          ) : null}
-        </div>
-      </div>
+      <ScreeningQuestionSection
+        answer={currentItem ? answers[currentItem.id] : undefined}
+        currentIndex={currentIndex}
+        currentItem={currentItem}
+        currentSectionTitle={currentSectionTitle}
+        itemCount={items.length}
+        onSelectOption={(value) => void handleSelectOption(value)}
+        onTextChange={(value) => currentItem && setAnswers((prev) => ({ ...prev, [currentItem.id]: value }))}
+        questionnaireLoaded={Boolean(questionnaire)}
+      />
+      <ScreeningQuestionActions
+        disabled={Boolean(submitScreening.isPending || (currentItem?.required && !answers[currentItem.id]))}
+        isLast={isLast}
+        isPending={submitScreening.isPending}
+        onNext={() => void handleNext()}
+        onPrevious={goToPrevious}
+        showPreviousButton={showPreviousButton}
+        showTextActionButton={showTextActionButton}
+      />
     </div>
   );
 }
