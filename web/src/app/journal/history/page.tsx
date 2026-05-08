@@ -1,14 +1,14 @@
-"use client";
-
-import { useJournalHistory } from "@/shared/hooks/useJournalHistory";
+import { serverApi } from "@/shared/lib/server-api";
 import { JournalHistoryActions } from "./_component/JournalHistoryActions";
 import { JournalHistoryListSection } from "./_component/JournalHistoryListSection";
 import { JournalHistorySummarySection } from "./_component/JournalHistorySummarySection";
 
 const positiveEmotions = new Set(["차분함", "안도감", "기쁨", "즐거움", "행복", "고마움", "편안함", "설렘", "평온함"]);
 
-export default function JournalHistoryPage() {
-  const { data: entries = [], isFetching } = useJournalHistory(10, { refetchOnMount: "always" });
+export const dynamic = "force-dynamic";
+
+export default async function JournalHistoryPage() {
+  const entries = await serverApi.getJournalHistory(10).catch(() => []);
   const allEmotionLabels = entries.flatMap((entry) => entry.emotions.map((emotion) => emotion.label));
   const recentTopEmotions = Array.from(
     allEmotionLabels.reduce((acc, label) => acc.set(label, (acc.get(label) ?? 0) + 1), new Map<string, number>())
@@ -33,7 +33,7 @@ export default function JournalHistoryPage() {
     <div className="min-h-screen text-onSurface">
       <main className="mx-auto flex w-full max-w-xl flex-col gap-12 px-6 pb-32 pt-8">
         <JournalHistorySummarySection
-          isFetching={isFetching}
+          isFetching={false}
           recentTopEmotions={recentTopEmotions}
           trendMessage={trendMessage}
         />

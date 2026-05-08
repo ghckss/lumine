@@ -1,5 +1,7 @@
 import { ScreeningStartIntroSection } from "./_component/ScreeningStartIntroSection";
 
+export const dynamic = "force-static";
+
 export default function ScreeningStartPage() {
   return (
     <div className="min-h-screen font-body text-onSurface selection:bg-primaryContainer selection:text-onPrimaryContainer">

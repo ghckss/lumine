@@ -10,6 +10,7 @@ export async function loginWithNativeProvider(provider: NativeProviderName): Pro
   return api.login(provider, {
     providerUserId: nativeAuth.providerUserId,
     accessToken: nativeAuth.accessToken,
+    idToken: nativeAuth.idToken ?? undefined,
     refreshToken: nativeAuth.refreshToken ?? undefined,
     displayName: nativeAuth.displayName ?? undefined
   });

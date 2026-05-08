@@ -1,7 +1,4 @@
-"use client";
-
-import { useParams, useSearchParams } from "next/navigation";
-import { useJournalEntry } from "@/shared/hooks/useJournalEntry";
+import { serverApi } from "@/shared/lib/server-api";
 import { JournalDetailActions } from "./_component/JournalDetailActions";
 import { JournalDetailContentSections } from "./_component/JournalDetailContentSections";
 import { JournalDetailHeaderSection } from "./_component/JournalDetailHeaderSection";
@@ -11,17 +8,24 @@ function isValidDateParam(date: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(date);
 }
 
-export default function JournalHistoryDetailPage() {
-  const params = useParams<{ date: string }>();
-  const searchParams = useSearchParams();
-  const date = typeof params.date === "string" ? params.date : "";
+type JournalHistoryDetailPageProps = {
+  params: Promise<{ date: string }>;
+  searchParams?: Promise<{ source?: string | string[] }>;
+};
+
+export const dynamic = "force-dynamic";
+
+export default async function JournalHistoryDetailPage({
+  params,
+  searchParams
+}: JournalHistoryDetailPageProps) {
+  const resolvedParams = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const date = typeof resolvedParams.date === "string" ? resolvedParams.date : "";
   const isValidDate = isValidDateParam(date);
-  const source = searchParams.get("source");
+  const source = Array.isArray(resolvedSearchParams.source) ? resolvedSearchParams.source[0] : resolvedSearchParams.source;
   const isFromWrite = source === "write";
-  const { data: entry, isFetching } = useJournalEntry(date, {
-    enabled: isValidDate,
-    refetchOnMount: "always"
-  });
+  const entry = isValidDate ? await serverApi.getJournalEntry(date).catch(() => null) : null;
 
   return (
     <div className="min-h-screen text-onSurface">
@@ -29,7 +33,7 @@ export default function JournalHistoryDetailPage() {
         <JournalDetailHeaderSection
           date={date}
           entry={entry}
-          isFetching={isFetching}
+          isFetching={false}
           isFromWrite={isFromWrite}
           isValidDate={isValidDate}
         />
@@ -38,7 +42,7 @@ export default function JournalHistoryDetailPage() {
           <JournalDetailStateSection title="올바른 기록 날짜가 아니에요." />
         ) : null}
 
-        {isValidDate && !entry && !isFetching ? (
+        {isValidDate && !entry ? (
           <JournalDetailStateSection
             title="해당 날짜의 기록을 찾지 못했어요."
             description="기록을 남기지 않은 날이거나 아직 불러오지 못한 상태일 수 있어요."

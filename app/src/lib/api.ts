@@ -39,6 +39,7 @@ export const api = {
     payload?: {
       providerUserId?: string;
       accessToken?: string;
+      idToken?: string;
       refreshToken?: string;
       displayName?: string;
     }

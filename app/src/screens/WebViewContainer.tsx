@@ -12,16 +12,12 @@ import type { LoginSession, UserProfile } from "../types/session";
 
 const tabRoutes: Record<TabKey, string> = {
   home: "/",
-  history: "/journal/history",
-  support: "/support"
+  history: "/journal/history"
 };
 
 function getActiveTab(pathname: string): TabKey {
   if (pathname.startsWith("/journal/history")) {
     return "history";
-  }
-  if (pathname.startsWith("/support")) {
-    return "support";
   }
   return "home";
 }
@@ -91,8 +87,8 @@ export function WebViewContainer({ session, profile, onLogout }: WebViewContaine
 
   const navigateToTab = useCallback((tab: TabKey) => {
     setActiveTab(tab);
-    webViewRef.current?.injectJavaScript(`window.location.href = '${WEB_BASE_URL}${tabRoutes[tab]}'; true;`);
-  }, []);
+    sendAppEvent("navigation.navigate", { href: tabRoutes[tab] });
+  }, [sendAppEvent]);
 
   const handleNavigationStateChange = useCallback((navState: WebViewNavigation) => {
     try {
@@ -107,6 +103,12 @@ export function WebViewContainer({ session, profile, onLogout }: WebViewContaine
     try {
       const envelope = JSON.parse(event.nativeEvent.data) as NativeBridgeEnvelope;
       if (envelope.type !== "webToApp") {
+        return;
+      }
+
+      if (envelope.payload.command === "navigation.ready") {
+        isWebReadyRef.current = true;
+        setIsLoading(false);
         return;
       }
 
@@ -180,16 +182,17 @@ export function WebViewContainer({ session, profile, onLogout }: WebViewContaine
               style={styles.webview}
               injectedJavaScriptBeforeContentLoaded={injectedBridgeScript}
               onMessage={handleMessage}
-              onLoadStart={() => {
-                isWebReadyRef.current = false;
-                setIsLoading(true);
-              }}
               onLoadEnd={() => {
                 isWebReadyRef.current = true;
                 setIsLoading(false);
                 bootstrapWeb();
               }}
-              onNavigationStateChange={handleNavigationStateChange}
+              onNavigationStateChange={(navState) => {
+                handleNavigationStateChange(navState);
+                if (isWebReadyRef.current) {
+                  setIsLoading(false);
+                }
+              }}
               onError={() => {
                 isWebReadyRef.current = false;
                 setIsLoading(false);
@@ -198,6 +201,8 @@ export function WebViewContainer({ session, profile, onLogout }: WebViewContaine
               originWhitelist={["http://*", "https://*"]}
               javaScriptEnabled
               sharedCookiesEnabled
+              bounces={false}
+              overScrollMode="never"
             />
           )}
 

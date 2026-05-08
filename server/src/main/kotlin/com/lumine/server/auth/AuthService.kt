@@ -2,17 +2,37 @@ package com.lumine.server.auth
 
 import com.lumine.server.user.AuthProvider
 import com.lumine.server.user.UserService
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.web.server.ResponseStatusException
 
 @Service
 class AuthService(
+    private val authProperties: AuthProperties,
+    private val providerTokenVerifier: ProviderTokenVerifier,
     private val userService: UserService
 ) {
     fun login(provider: AuthProvider, request: NativeLoginExchangeRequest? = null): LoginResponse {
+        val verifiedUser = when {
+            authProperties.mockLoginEnabled && request.isMockLoginRequest(provider) -> mockVerifiedUser(provider)
+            request != null -> providerTokenVerifier.verify(provider, request)
+            else -> throw ResponseStatusException(
+                HttpStatus.UNAUTHORIZED,
+                "Provider token is required."
+            )
+        }
+
+        if (!request?.providerUserId.isNullOrBlank() && request?.providerUserId != verifiedUser.providerUserId) {
+            throw ResponseStatusException(
+                HttpStatus.UNAUTHORIZED,
+                "Provider user id does not match verified token."
+            )
+        }
+
         val response = LoginResponse(
-            userId = request?.providerUserId ?: if (provider == AuthProvider.KAKAO) "mock-kakao-001" else "mock-google-001",
+            userId = verifiedUser.providerUserId,
             provider = provider,
-            displayName = request?.displayName ?: if (provider == AuthProvider.KAKAO) "하린" else "서윤",
+            displayName = verifiedUser.displayName ?: request?.displayName ?: provider.defaultDisplayName(),
             accessToken = request?.accessToken ?: "mock-access-token-${provider.name.lowercase()}",
             refreshToken = request?.refreshToken ?: "mock-refresh-token-${provider.name.lowercase()}"
         )
@@ -30,4 +50,24 @@ class AuthService(
         userService.clearCurrentUser()
         return LogoutResponse(success = true)
     }
+
+    private fun NativeLoginExchangeRequest?.isMockLoginRequest(provider: AuthProvider): Boolean {
+        if (this == null) {
+            return true
+        }
+
+        val expectedProvider = provider.name.lowercase()
+        return providerUserId?.startsWith("mock-$expectedProvider") == true ||
+            accessToken == "mock-$expectedProvider-native-access-token" ||
+            idToken == "mock-$expectedProvider-native-id-token"
+    }
+
+    private fun mockVerifiedUser(provider: AuthProvider): VerifiedProviderUser =
+        VerifiedProviderUser(
+            providerUserId = if (provider == AuthProvider.KAKAO) "mock-kakao-native-user" else "mock-google-native-user",
+            displayName = provider.defaultDisplayName()
+        )
+
+    private fun AuthProvider.defaultDisplayName(): String =
+        if (this == AuthProvider.KAKAO) "하린" else "서윤"
 }

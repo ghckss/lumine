@@ -23,7 +23,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>kakaoYOUR_KAKAO_NATIVE_APP_KEY</string>
+				<string>kakaoc32eccf4981c6f1509d9d675e1b50ceb</string>
 			</array>
 		</dict>
 		<dict>
@@ -31,7 +31,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>YOUR_GOOGLE_IOS_REVERSED_CLIENT_ID</string>
+				<string>com.googleusercontent.apps.56571786840-dahtgvfrnbn81plpul139grh2jf7m2gk</string>
 			</array>
 		</dict>
 	</array>
@@ -44,11 +44,11 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>KAKAO_APP_KEY</key>
-	<string>YOUR_KAKAO_NATIVE_APP_KEY</string>
+	<string>c32eccf4981c6f1509d9d675e1b50ceb</string>
 	<key>GOOGLE_IOS_CLIENT_ID</key>
-	<string>YOUR_GOOGLE_IOS_CLIENT_ID</string>
+	<string>56571786840-dahtgvfrnbn81plpul139grh2jf7m2gk.apps.googleusercontent.com</string>
 	<key>GOOGLE_WEB_CLIENT_ID</key>
-	<string>YOUR_GOOGLE_WEB_CLIENT_ID</string>
+	<string>56571786840-vqvqk71u9ut1tb5j0fbv5pv05pcia3v5.apps.googleusercontent.com</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>kakaokompassauth</string>

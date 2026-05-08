@@ -106,6 +106,40 @@ export function AppHeader() {
     return () => window.cancelAnimationFrame(frame);
   }, [isMenuOpen]);
 
+  useEffect(() => {
+    if (!isMenuOpen) {
+      return;
+    }
+
+    const scrollY = window.scrollY;
+    const { body, documentElement } = document;
+    const previousBodyStyle = {
+      overflow: body.style.overflow,
+      overscrollBehavior: body.style.overscrollBehavior,
+      position: body.style.position,
+      top: body.style.top,
+      width: body.style.width
+    };
+    const previousRootOverscroll = documentElement.style.overscrollBehavior;
+
+    body.style.overflow = "hidden";
+    body.style.overscrollBehavior = "none";
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.width = "100%";
+    documentElement.style.overscrollBehavior = "none";
+
+    return () => {
+      body.style.overflow = previousBodyStyle.overflow;
+      body.style.overscrollBehavior = previousBodyStyle.overscrollBehavior;
+      body.style.position = previousBodyStyle.position;
+      body.style.top = previousBodyStyle.top;
+      body.style.width = previousBodyStyle.width;
+      documentElement.style.overscrollBehavior = previousRootOverscroll;
+      window.scrollTo(0, scrollY);
+    };
+  }, [isMenuOpen]);
+
   function handleBack() {
     if (typeof window !== "undefined" && window.history.length > 1) {
       router.back();
@@ -153,6 +187,15 @@ export function AppHeader() {
     }, 220);
   }
 
+  function handleMenuNavigation(href: string) {
+    setIsMenuVisible(false);
+    window.setTimeout(() => {
+      setIsMenuOpen(false);
+      setSheetType(null);
+      router.push(href);
+    }, 180);
+  }
+
   return (
     <>
       <header className="fixed left-0 top-0 z-50 w-full bg-background/90 backdrop-blur-xl border-none">
@@ -196,16 +239,16 @@ export function AppHeader() {
       </header>
 
       {isMenuOpen ? (
-        <div className="fixed inset-0 z-[60] overflow-hidden bg-[rgba(15,23,42,0.18)]">
+        <div className="fixed inset-0 z-[60] h-[100dvh] overflow-hidden overscroll-none bg-slate-950/35 backdrop-blur-[2px]">
           <button
             type="button"
             onClick={handleCloseMenu}
-            className={`absolute inset-0 h-full w-full transition-opacity duration-200 ${isMenuVisible ? "opacity-100" : "opacity-0"}`}
+            className={`absolute inset-0 h-full w-full touch-none transition-opacity duration-200 ${isMenuVisible ? "opacity-100" : "opacity-0"}`}
             aria-label="메뉴 닫기"
           />
 
           <div
-            className={`flex min-h-screen w-full flex-col bg-background px-6 pb-10 pt-6 transition-transform duration-300 ease-out ${isMenuVisible ? "translate-x-0" : "translate-x-full"}`}
+            className={`relative z-10 flex h-[100dvh] max-h-[100dvh] w-full touch-pan-y flex-col overflow-y-auto overscroll-none bg-background px-6 pb-10 pt-6 transition-transform duration-300 ease-out ${isMenuVisible ? "translate-x-0" : "translate-x-full"}`}
           >
             <div className="flex w-full items-start justify-between">
               <div>
@@ -257,6 +300,15 @@ export function AppHeader() {
               </div>
             ) : (
               <div className="mt-10 grid w-full gap-4">
+                <button
+                  type="button"
+                  onClick={() => handleMenuNavigation("/support")}
+                  className="rounded-[28px] bg-[linear-gradient(135deg,var(--color-secondary-container)_0%,var(--color-surface-container-lowest)_100%)] px-6 py-6 text-left shadow-moon transition hover:bg-surfaceContainerLow"
+                >
+                  <p className="text-lg font-semibold text-onSurface">도움 요청</p>
+                  <p className="mt-2 text-sm leading-7 text-onSurfaceVariant">지금 바로 연결할 수 있는 도움 정보를 확인해요.</p>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => setSheetType("terms")}

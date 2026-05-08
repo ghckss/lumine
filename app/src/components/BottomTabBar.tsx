@@ -2,7 +2,7 @@ import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { tokens } from "../config/tokens";
 
-export type TabKey = "home" | "history" | "support";
+export type TabKey = "home" | "history";
 
 type BottomTabBarProps = {
   activeTab: TabKey;
@@ -11,8 +11,7 @@ type BottomTabBarProps = {
 
 const tabs: Array<{ key: TabKey; label: string }> = [
   { key: "home", label: "홈" },
-  { key: "history", label: "기록" },
-  { key: "support", label: "도움" }
+  { key: "history", label: "내 마음기록" }
 ];
 
 export function BottomTabBar({ activeTab, onPress }: BottomTabBarProps) {

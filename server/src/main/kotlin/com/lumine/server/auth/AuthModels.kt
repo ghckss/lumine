@@ -5,6 +5,7 @@ import com.lumine.server.user.AuthProvider
 data class NativeLoginExchangeRequest(
     val providerUserId: String? = null,
     val accessToken: String? = null,
+    val idToken: String? = null,
     val refreshToken: String? = null,
     val displayName: String? = null
 )

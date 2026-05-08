@@ -67,14 +67,54 @@ export type SupportResource = {
   description: string;
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
+const CONFIGURED_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
+const LOCAL_API_PORT = "8080";
+
+function isLoopbackHost(hostname: string) {
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+}
+
+function getHostname(value: string) {
+  try {
+    return new URL(value).hostname;
+  } catch {
+    return "";
+  }
+}
+
+function getRuntimeLocalApiBaseUrl() {
+  const url = new URL(window.location.href);
+  url.port = LOCAL_API_PORT;
+  url.pathname = "";
+  url.search = "";
+  url.hash = "";
+
+  return url.origin;
+}
+
+function getApiBaseUrl() {
+  if (typeof window === "undefined") {
+    return CONFIGURED_API_BASE_URL || "http://localhost:8080";
+  }
+
+  if (!CONFIGURED_API_BASE_URL) {
+    return getRuntimeLocalApiBaseUrl();
+  }
+
+  const configuredHostname = getHostname(CONFIGURED_API_BASE_URL);
+  if (isLoopbackHost(configuredHostname) && configuredHostname !== window.location.hostname) {
+    return getRuntimeLocalApiBaseUrl();
+  }
+
+  return CONFIGURED_API_BASE_URL;
+}
 
 export function setApiAccessToken(token: string | null) {
   authAccessToken = token;
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",

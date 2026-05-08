@@ -9,6 +9,18 @@ GRADLE_ZIP="/tmp/gradle-${GRADLE_VERSION}-bin.zip"
 GRADLE_USER_HOME_DIR="/tmp/gradle-home-lumine-server"
 GRADLE_PROJECT_CACHE_DIR="/tmp/gradle-project-cache-lumine-server"
 
+load_env_file() {
+  local env_file="$1"
+  if [[ ! -f "$env_file" ]]; then
+    return
+  fi
+
+  echo "[lumine] loading env ${env_file#$ROOT_DIR/}"
+  set -a
+  source "$env_file"
+  set +a
+}
+
 ensure_gradle() {
   if [[ -x "$GRADLE_BIN" ]]; then
     return
@@ -28,6 +40,9 @@ ensure_gradle() {
 
 mkdir -p "$GRADLE_USER_HOME_DIR" "$GRADLE_PROJECT_CACHE_DIR"
 ensure_gradle
+load_env_file "$ROOT_DIR/.env.local"
+load_env_file "$ROOT_DIR/server/.env"
+load_env_file "$ROOT_DIR/server/.env.local"
 
 cd "$ROOT_DIR/server"
 exec env \

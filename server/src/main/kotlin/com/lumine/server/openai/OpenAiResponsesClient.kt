@@ -3,6 +3,8 @@ package com.lumine.server.openai
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
+import jakarta.annotation.PostConstruct
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.http.HttpEntity
@@ -19,9 +21,20 @@ class OpenAiResponsesClient(
     @Value("\${openai.model:gpt-5.2}") private val model: String,
     @Value("\${openai.base-url:https://api.openai.com/v1}") private val baseUrl: String
 ) {
+    private val logger = LoggerFactory.getLogger(javaClass)
     private val restTemplate: RestTemplate = restTemplateBuilder.build()
 
     fun isConfigured(): Boolean = apiKey.isNotBlank()
+
+    @PostConstruct
+    fun logConfiguration() {
+        logger.info(
+            "OpenAI client initialized. configured={}, model={}, baseUrl={}",
+            isConfigured(),
+            model,
+            baseUrl
+        )
+    }
 
     fun generateText(
         instructions: String,
@@ -29,6 +42,7 @@ class OpenAiResponsesClient(
         temperature: Double? = null
     ): String? {
         if (!isConfigured()) {
+            logger.warn("OpenAI text generation skipped because OPENAI_API_KEY is empty.")
             return null
         }
 
@@ -46,10 +60,21 @@ class OpenAiResponsesClient(
             requestBody["temperature"] = temperature
         }
 
-        return runCatching {
+        val result = runCatching {
             val root = createResponse(requestBody)
             extractText(root)
-        }.getOrNull()?.takeIf { it.isNotBlank() }
+        }
+
+        result.exceptionOrNull()?.let {
+            logger.warn("OpenAI text generation failed. Falling back. model={}, reason={}", model, it.message)
+        }
+
+        val text = result.getOrNull()?.takeIf { it.isNotBlank() }
+        if (result.isSuccess && text == null) {
+            logger.warn("OpenAI text generation returned blank output. Falling back. model={}", model)
+        }
+
+        return text
     }
 
     fun generateStructured(
@@ -59,6 +84,7 @@ class OpenAiResponsesClient(
         schema: ObjectNode
     ): JsonNode? {
         if (!isConfigured()) {
+            logger.warn("OpenAI structured generation skipped because OPENAI_API_KEY is empty. schema={}", schemaName)
             return null
         }
 
@@ -77,10 +103,26 @@ class OpenAiResponsesClient(
             )
         )
 
-        return runCatching {
+        val result = runCatching {
             val root = createResponse(requestBody)
             extractStructuredOutput(root)
-        }.getOrNull()
+        }
+
+        result.exceptionOrNull()?.let {
+            logger.warn(
+                "OpenAI structured generation failed. Falling back. model={}, schema={}, reason={}",
+                model,
+                schemaName,
+                it.message
+            )
+        }
+
+        val output = result.getOrNull()
+        if (result.isSuccess && output == null) {
+            logger.warn("OpenAI structured generation returned empty output. Falling back. model={}, schema={}", model, schemaName)
+        }
+
+        return output
     }
 
     private fun createResponse(requestBody: Any): JsonNode {

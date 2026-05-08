@@ -24,3 +24,13 @@ openai:
   api-key: ${OPENAI_API_KEY:}
   model: ${OPENAI_MODEL:gpt-5.2}
   base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+
+auth:
+  mock-login-enabled: ${AUTH_MOCK_LOGIN_ENABLED:false}
+  google:
+    client-ids: 56571786840-vqvqk71u9ut1tb5j0fbv5pv05pcia3v5.apps.googleusercontent.com
+    token-info-url: ${GOOGLE_TOKEN_INFO_URL:https://oauth2.googleapis.com/tokeninfo}
+  kakao:
+    app-ids: ${KAKAO_APP_IDS:}
+    token-info-url: ${KAKAO_TOKEN_INFO_URL:https://kapi.kakao.com/v1/user/access_token_info}
+    user-info-url: ${KAKAO_USER_INFO_URL:https://kapi.kakao.com/v2/user/me}

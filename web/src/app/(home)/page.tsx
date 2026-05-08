@@ -1,10 +1,6 @@
-"use client";
-
 import type { JournalEntry } from "@/shared/lib/api";
-import { useJournalEntry } from "@/shared/hooks/useJournalEntry";
-import { useJournalHistory } from "@/shared/hooks/useJournalHistory";
-import { useScreeningHistory } from "@/shared/hooks/useScreeningHistory";
 import { getTodayDate } from "@/shared/lib/date";
+import { serverApi } from "@/shared/lib/server-api";
 import { HomeHeroSection } from "./_component/HomeHeroSection";
 import { ReflectionPromptSection } from "./_component/ReflectionPromptSection";
 import {
@@ -17,6 +13,8 @@ const restorativeEmotions = new Set(["차분함", "안도감", "기쁨", "즐거
 const heavyEmotions = new Set(["지침", "답답함", "무거움", "불안함", "서운함", "외로움", "분노", "괴로움"]);
 const tenseEmotions = new Set(["답답함", "불안함", "분노", "괴로움"]);
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+export const dynamic = "force-dynamic";
 
 function dateToUtcMs(date: string) {
   const [year, month, day] = date.split("-").map(Number);
@@ -139,11 +137,13 @@ function buildDashboardDays(
   });
 }
 
-export default function HomePage() {
+export default async function HomePage() {
   const today = getTodayDate();
-  const { data: todayJournalEntry } = useJournalEntry(today);
-  const { data: journalHistory } = useJournalHistory(30);
-  const { data: screeningHistory } = useScreeningHistory();
+  const [todayJournalEntry, journalHistory, screeningHistory] = await Promise.all([
+    serverApi.getJournalEntry(today).catch(() => null),
+    serverApi.getJournalHistory(30).catch(() => []),
+    serverApi.getScreeningHistory().catch(() => [])
+  ]);
 
   const journalEntries = mergeJournalEntries(todayJournalEntry, journalHistory);
   const latestScreeningDate = screeningHistory?.[0]?.completedDate ?? null;

@@ -16,6 +16,10 @@
 
 # Local machine
 /android/local.properties
+/android/release-signing.env
+/android/keystores/
+/android/*.keystore
+/android/*.jks
 
 # Logs
 npm-debug.log*

@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">Lumine</string>
-    <string name="kakao_app_key">YOUR_KAKAO_NATIVE_APP_KEY</string>
-    <string name="kakao_scheme">kakaoYOUR_KAKAO_NATIVE_APP_KEY</string>
-    <string name="google_web_client_id">YOUR_GOOGLE_WEB_CLIENT_ID</string>
+    <string name="kakao_app_key">c32eccf4981c6f1509d9d675e1b50ceb</string>
+    <string name="kakao_scheme">kakaoc32eccf4981c6f1509d9d675e1b50ceb</string>
+    <string name="google_web_client_id">56571786840-8va2b98tt91npfhi98v1u7o1j1abl649.apps.googleusercontent.com</string>
 </resources>
