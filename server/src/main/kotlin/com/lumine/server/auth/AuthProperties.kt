@@ -10,9 +10,16 @@ import org.springframework.web.client.RestTemplate
 @ConfigurationProperties(prefix = "auth")
 data class AuthProperties(
     var mockLoginEnabled: Boolean = false,
+    var jwt: Jwt = Jwt(),
     var google: Google = Google(),
     var kakao: Kakao = Kakao()
 ) {
+    data class Jwt(
+        var secret: String = "lumine-local-development-jwt-secret-change-me",
+        var issuer: String = "lumine",
+        var accessTokenTtlSeconds: Long = 60L * 60L * 24L * 30L
+    )
+
     data class Google(
         var clientIds: String = "",
         var tokenInfoUrl: String = "https://oauth2.googleapis.com/tokeninfo"

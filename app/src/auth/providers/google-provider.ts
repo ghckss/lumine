@@ -63,7 +63,6 @@ export class GoogleNativeAuthProvider implements NativeAuthProvider {
         providerUserId: String(result.data.user.id),
         accessToken: tokens?.accessToken ?? result.data.idToken ?? "google-native-access-token",
         idToken: result.data.idToken ?? null,
-        refreshToken: null,
         displayName: result.data.user.name ?? null
       };
     } catch {
@@ -81,7 +80,6 @@ export class GoogleNativeAuthProvider implements NativeAuthProvider {
       providerUserId: "mock-google-native-user",
       accessToken: "mock-google-native-access-token",
       idToken: "mock-google-native-id-token",
-      refreshToken: null,
       displayName: "서윤"
     };
   }

@@ -2,13 +2,13 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ActivityIndicator, AppState, AppStateStatus, Linking, SafeAreaView, StyleSheet, Text, View } from "react-native";
 import { WebView, WebViewMessageEvent, WebViewNavigation } from "react-native-webview";
 import { BottomTabBar, TabKey } from "../components/BottomTabBar";
-import { createAppToWebPayload, createBridgeResponsePayload, injectedBridgeScript } from "../bridge/app-to-web";
+import { createAppToWebPayload, createBridgeResponsePayload, createInjectedBridgeScript } from "../bridge/app-to-web";
 import { handleWebToAppBridge } from "../bridge/registry";
 import type { NativeBridgeEnvelope } from "../bridge/types";
 import { SupportFallback } from "../components/SupportFallback";
 import { WEB_BASE_URL } from "../config/env";
 import { tokens } from "../config/tokens";
-import type { LoginSession, UserProfile } from "../types/session";
+import type { LoginSession } from "../types/session";
 
 const tabRoutes: Record<TabKey, string> = {
   home: "/",
@@ -24,21 +24,22 @@ function getActiveTab(pathname: string): TabKey {
 
 type WebViewContainerProps = {
   session: LoginSession | null;
-  profile: UserProfile | null;
   onLogout: () => Promise<void>;
 };
 
-export function WebViewContainer({ session, profile, onLogout }: WebViewContainerProps) {
+export function WebViewContainer({ session, onLogout }: WebViewContainerProps) {
   const webViewRef = useRef<WebView>(null);
   const pendingEventsRef = useRef<Array<{ command: string; params?: Record<string, unknown> }>>([]);
   const isWebReadyRef = useRef(false);
-  const hasBootstrappedRef = useRef(false);
   const [activeTab, setActiveTab] = useState<TabKey>("home");
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadError, setHasLoadError] = useState(false);
   const [webViewKey, setWebViewKey] = useState(0);
   const source = useMemo(() => ({ uri: WEB_BASE_URL }), []);
-  const isGuest = !session;
+  const injectedJavaScriptBeforeContentLoaded = useMemo(
+    () => createInjectedBridgeScript(session?.accessToken ?? null),
+    [session?.accessToken]
+  );
 
   const injectAppEvent = useCallback((command: string, params?: Record<string, unknown>) => {
     webViewRef.current?.injectJavaScript(createAppToWebPayload(command, params));
@@ -64,37 +65,6 @@ export function WebViewContainer({ session, profile, onLogout }: WebViewContaine
     pendingEventsRef.current = [];
   }, [injectAppEvent]);
 
-  const bootstrapWeb = useCallback(() => {
-    if (!isWebReadyRef.current || !webViewRef.current || hasBootstrappedRef.current) {
-      return;
-    }
-
-    setHasLoadError(false);
-    injectAppEvent("auth.bootstrap", isGuest
-      ? {
-          status: "guest",
-          displayName: "손님으로 머무는 오늘"
-        }
-      : {
-          status: "ok",
-          provider: session.provider,
-          displayName: profile?.displayName ?? session.displayName,
-          accessToken: session.accessToken,
-          refreshToken: session.refreshToken,
-          userId: session.userId,
-          profile: profile
-            ? {
-                gender: profile.gender,
-                birthDate: profile.birthDate,
-                agreedToTerms: profile.agreedToTerms
-              }
-            : null
-        });
-    injectAppEvent("network.changed", { online: true });
-    hasBootstrappedRef.current = true;
-    flushPendingEvents();
-  }, [flushPendingEvents, injectAppEvent, isGuest, profile, session]);
-
   const navigateToTab = useCallback((tab: TabKey) => {
     setActiveTab(tab);
     sendAppEvent("navigation.navigate", { href: tabRoutes[tab] });
@@ -118,8 +88,10 @@ export function WebViewContainer({ session, profile, onLogout }: WebViewContaine
 
       if (envelope.payload.command === "navigation.ready") {
         isWebReadyRef.current = true;
+        setHasLoadError(false);
         setIsLoading(false);
-        bootstrapWeb();
+        injectAppEvent("network.changed", { online: true });
+        flushPendingEvents();
         return;
       }
 
@@ -143,16 +115,7 @@ export function WebViewContainer({ session, profile, onLogout }: WebViewContaine
         })
       );
     }
-  }, [bootstrapWeb, onLogout]);
-
-  useEffect(() => {
-    if (!isWebReadyRef.current) {
-      return;
-    }
-
-    hasBootstrappedRef.current = false;
-    bootstrapWeb();
-  }, [bootstrapWeb]);
+  }, [flushPendingEvents, injectAppEvent, onLogout]);
 
   const handleAppStateChange = useCallback(
     (nextAppState: AppStateStatus) => {
@@ -186,7 +149,6 @@ export function WebViewContainer({ session, profile, onLogout }: WebViewContaine
     setIsLoading(true);
     pendingEventsRef.current = [];
     isWebReadyRef.current = false;
-    hasBootstrappedRef.current = false;
     setWebViewKey((prev) => prev + 1);
   }, []);
 
@@ -202,7 +164,7 @@ export function WebViewContainer({ session, profile, onLogout }: WebViewContaine
               ref={webViewRef}
               source={source}
               style={styles.webview}
-              injectedJavaScriptBeforeContentLoaded={injectedBridgeScript}
+              injectedJavaScriptBeforeContentLoaded={injectedJavaScriptBeforeContentLoaded}
               onMessage={handleMessage}
               onLoadEnd={() => {
                 setHasLoadError(false);
@@ -215,7 +177,6 @@ export function WebViewContainer({ session, profile, onLogout }: WebViewContaine
               }}
               onError={() => {
                 isWebReadyRef.current = false;
-                hasBootstrappedRef.current = false;
                 setIsLoading(false);
                 setHasLoadError(true);
               }}

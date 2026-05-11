@@ -1,5 +1,3 @@
-export type BootstrapMode = "unknown" | "guest" | "authenticated";
-
 declare global {
   interface Window {
     webToApp?: (command: string, params?: Record<string, unknown>) => Promise<{ data?: unknown }>;

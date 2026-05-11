@@ -40,7 +40,6 @@ export const api = {
       providerUserId?: string;
       accessToken?: string;
       idToken?: string;
-      refreshToken?: string;
       displayName?: string;
     }
   ) {

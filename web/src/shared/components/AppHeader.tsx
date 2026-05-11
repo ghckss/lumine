@@ -4,8 +4,8 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useBridgeBootstrap } from "@/shared/hooks/useBridgeBootstrap";
 import { AppIcon } from "@/shared/components/AppIcon";
+import { getAuthSession } from "@/shared/lib/auth-session";
 
 type HeaderConfig = {
   title: string;
@@ -58,8 +58,8 @@ function getHeaderConfig(pathname: string, displayName: string | null): HeaderCo
 export function AppHeader() {
   const pathname = usePathname();
   const router = useRouter();
-  const bootstrap = useBridgeBootstrap();
-  const config = getHeaderConfig(pathname, bootstrap.displayName);
+  const authSession = getAuthSession();
+  const config = getHeaderConfig(pathname, authSession.displayName);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {

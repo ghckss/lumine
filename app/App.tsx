@@ -53,7 +53,6 @@ function AppRoot() {
         {isGuestMode ? (
           <WebViewContainer
             session={null}
-            profile={null}
             onLogout={logout}
           />
         ) : hasSeenWelcome ? (
@@ -83,7 +82,7 @@ function AppRoot() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={tokens.background} />
-      <WebViewContainer session={session} profile={profile} onLogout={logout} />
+      <WebViewContainer session={session} onLogout={logout} />
     </SafeAreaView>
   );
 }

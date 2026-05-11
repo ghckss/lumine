@@ -5,7 +5,6 @@ export type NativeAuthPayload = {
   providerUserId: string;
   accessToken: string;
   idToken?: string | null;
-  refreshToken?: string | null;
   displayName?: string | null;
 };
 

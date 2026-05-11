@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { useSaveJournalEntry } from "@/shared/hooks/useSaveJournalEntry";
 import { getTodayDate } from "@/shared/lib/date";
 import { ComfortOverlay } from "./_component/ComfortOverlay";
 import {
@@ -12,6 +11,7 @@ import {
 } from "./_component/EmotionPickerSection";
 import { JournalBodySection } from "./_component/JournalBodySection";
 import { JournalSubmitButton } from "./_component/JournalSubmitButton";
+import { useSaveJournalEntry } from "./_queries/useSaveJournalEntry";
 
 export default function JournalPage() {
   const router = useRouter();

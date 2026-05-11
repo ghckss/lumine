@@ -2,9 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { useScreeningQuestionnaire } from "@/shared/hooks/useScreeningQuestionnaire";
-import { useSubmitScreening } from "@/shared/hooks/useSubmitScreening";
 import type { ScreeningQuestionnaire } from "@/shared/lib/api";
+import { useScreeningQuestionnaire } from "../_queries/useScreeningQuestionnaire";
+import { useSubmitScreening } from "../_queries/useSubmitScreening";
 import { ScreeningQuestionActions } from "./ScreeningQuestionActions";
 import { ScreeningQuestionSection } from "./ScreeningQuestionSection";
 

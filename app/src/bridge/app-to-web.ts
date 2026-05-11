@@ -28,7 +28,24 @@ export function createBridgeResponsePayload(response: unknown) {
   return `window.dispatchEvent(new MessageEvent('message', { data: ${JSON.stringify(serialized)} })); true;`;
 }
 
-export const injectedBridgeScript = `
+const AUTH_COOKIE_NAME = "lumine_access_token";
+
+export function createInjectedBridgeScript(accessToken?: string | null) {
+  return `
+(function() {
+  const token = ${JSON.stringify(accessToken ?? "")};
+  const cookieName = ${JSON.stringify(AUTH_COOKIE_NAME)};
+  if (token) {
+    document.cookie = cookieName + '=' + encodeURIComponent(token) + '; path=/; max-age=2592000; SameSite=Lax';
+  } else {
+    document.cookie = cookieName + '=; path=/; max-age=0; SameSite=Lax';
+  }
+})();
+${injectedBridgeScript}
+`;
+}
+
+const injectedBridgeScript = `
 (function() {
   const pending = new Map();
   const BRIDGE_TIMEOUT_MS = 8000;

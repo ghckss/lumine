@@ -1,8 +1,8 @@
+import { getAuthSession, resetAuthSessionCache } from "@/shared/lib/auth-session";
+
 export type ApiResponse<T> = {
   data: T;
 };
-
-let authAccessToken: string | null = null;
 
 export type JournalEmotion = {
   id: string;
@@ -109,22 +109,23 @@ function getApiBaseUrl() {
   return CONFIGURED_API_BASE_URL;
 }
 
-export function setApiAccessToken(token: string | null) {
-  authAccessToken = token;
-}
-
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const accessToken = getAuthSession().accessToken;
   const response = await fetch(`${getApiBaseUrl()}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
-      ...(authAccessToken ? { Authorization: `Bearer ${authAccessToken}` } : {}),
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...(init?.headers ?? {})
     },
     cache: "no-store"
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      resetAuthSessionCache({ clearCookie: true });
+    }
+
     throw new Error(`API request failed: ${response.status}`);
   }
 

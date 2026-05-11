@@ -6,7 +6,6 @@ export type LoginSession = {
   provider: AuthProvider;
   displayName: string;
   accessToken: string;
-  refreshToken: string;
 };
 
 export type UserProfile = {

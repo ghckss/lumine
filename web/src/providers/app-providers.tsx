@@ -3,8 +3,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { setApiAccessToken } from "@/shared/lib/api";
-import { BridgeBootstrapProvider, useBridgeBootstrap } from "@/shared/hooks/useBridgeBootstrap";
 
 declare global {
   interface Window {
@@ -19,10 +17,8 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <BridgeBootstrapProvider>
-        <BridgeRuntimeSync />
-        {children}
-      </BridgeBootstrapProvider>
+      <BridgeRuntimeSync />
+      {children}
     </QueryClientProvider>
   );
 }
@@ -32,7 +28,6 @@ function BridgeRuntimeSync() {
     <>
       <BridgeRouteReadySync />
       <BridgeNavigationSync />
-      <BootstrapSessionSync />
     </>
   );
 }
@@ -84,16 +79,6 @@ function BridgeNavigationSync() {
       window.removeEventListener("appToWeb", handleCustomEvent);
     };
   }, [pathname, router]);
-
-  return null;
-}
-
-function BootstrapSessionSync() {
-  const bootstrap = useBridgeBootstrap();
-
-  useEffect(() => {
-    setApiAccessToken(bootstrap.mode === "authenticated" ? bootstrap.accessToken : null);
-  }, [bootstrap.accessToken, bootstrap.mode]);
 
   return null;
 }

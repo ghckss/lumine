@@ -27,6 +27,10 @@ openai:
 
 auth:
   mock-login-enabled: ${AUTH_MOCK_LOGIN_ENABLED:false}
+  jwt:
+    secret: ${AUTH_JWT_SECRET:lumine-local-development-jwt-secret-change-me}
+    issuer: ${AUTH_JWT_ISSUER:lumine}
+    access-token-ttl-seconds: ${AUTH_JWT_ACCESS_TOKEN_TTL_SECONDS:2592000}
   google:
     client-ids: 56571786840-vqvqk71u9ut1tb5j0fbv5pv05pcia3v5.apps.googleusercontent.com
     token-info-url: ${GOOGLE_TOKEN_INFO_URL:https://oauth2.googleapis.com/tokeninfo}

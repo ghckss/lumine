@@ -5,8 +5,9 @@ import type {
   ScreeningResult
 } from "@/shared/lib/api";
 import { api } from "@/shared/lib/api";
+import { getAuthSession } from "@/shared/lib/auth-session";
 import { getTodayDate } from "@/shared/lib/date";
-import { getDeviceValue, setDeviceValue, type BootstrapMode } from "@/shared/lib/bridge-device";
+import { getDeviceValue, setDeviceValue } from "@/shared/lib/bridge-device";
 
 const JOURNAL_HISTORY_KEY = "journal.history";
 const SCREENING_HISTORY_KEY = "screening.history";
@@ -116,7 +117,7 @@ function evaluateGuestScreening(
   };
 }
 
-export async function getJournalEntryContent(date: string, mode: BootstrapMode) {
+export async function getJournalEntryContent(date: string) {
   try {
     const entry = await api.getJournalEntry(date);
     if (entry) {
@@ -128,7 +129,7 @@ export async function getJournalEntryContent(date: string, mode: BootstrapMode) 
   }
 }
 
-export async function getJournalHistoryContent(mode: BootstrapMode, limit = 10) {
+export async function getJournalHistoryContent(limit = 10) {
   try {
     const entries = await api.getJournalHistory(limit);
     await setDeviceValue(JOURNAL_HISTORY_KEY, entries);
@@ -139,10 +140,7 @@ export async function getJournalHistoryContent(mode: BootstrapMode, limit = 10) 
   }
 }
 
-export async function saveJournalEntryContent(
-  payload: { date: string; emotions: string[]; body: string },
-  mode: BootstrapMode
-) {
+export async function saveJournalEntryContent(payload: { date: string; emotions: string[]; body: string }) {
   try {
     const entry = await api.saveJournalEntry(payload);
     const history = (await getDeviceValue<JournalEntry[]>(JOURNAL_HISTORY_KEY)) ?? [];
@@ -151,7 +149,7 @@ export async function saveJournalEntryContent(
     await setDeviceValue(JOURNAL_HISTORY_KEY, nextHistory);
     return entry;
   } catch {
-    if (mode !== "guest") {
+    if (getAuthSession().authScope !== "guest") {
       throw new Error("감정 기록을 저장하지 못했습니다.");
     }
 
@@ -175,7 +173,7 @@ export async function saveJournalEntryContent(
   }
 }
 
-export async function getScreeningLatestContent(mode: BootstrapMode) {
+export async function getScreeningLatestContent() {
   try {
     const result = await api.getLatestScreening();
     if (result) {
@@ -188,7 +186,7 @@ export async function getScreeningLatestContent(mode: BootstrapMode) {
   }
 }
 
-export async function getScreeningHistoryContent(mode: BootstrapMode) {
+export async function getScreeningHistoryContent() {
   try {
     const history = await api.getScreeningHistory();
     await setDeviceValue(SCREENING_HISTORY_KEY, history);
@@ -200,8 +198,7 @@ export async function getScreeningHistoryContent(mode: BootstrapMode) {
 
 export async function submitScreeningContent(
   questionnaire: ScreeningQuestionnaire,
-  payload: { answers: Record<string, string> },
-  mode: BootstrapMode
+  payload: { answers: Record<string, string> }
 ) {
   try {
     const result = await api.submitScreening(payload);
@@ -219,7 +216,7 @@ export async function submitScreeningContent(
     );
     return result;
   } catch {
-    if (mode !== "guest") {
+    if (getAuthSession().authScope !== "guest") {
       throw new Error("설문 분석을 완료하지 못했습니다.");
     }
 

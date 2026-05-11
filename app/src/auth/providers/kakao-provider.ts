@@ -25,7 +25,6 @@ export class KakaoNativeAuthProvider implements NativeAuthProvider {
         provider: "kakao",
         providerUserId: String(profile.id),
         accessToken: token.accessToken ?? "kakao-native-access-token",
-        refreshToken: token.refreshToken ?? null,
         displayName: profile.nickname ?? profile.name ?? null
       };
     } catch {
@@ -38,7 +37,6 @@ export class KakaoNativeAuthProvider implements NativeAuthProvider {
       provider: "kakao",
       providerUserId: "mock-kakao-native-user",
       accessToken: "mock-kakao-native-access-token",
-      refreshToken: "mock-kakao-native-refresh-token",
       displayName: "하린"
     };
   }

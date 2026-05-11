@@ -10,6 +10,7 @@ import org.springframework.web.server.ResponseStatusException
 class AuthService(
     private val authProperties: AuthProperties,
     private val providerTokenVerifier: ProviderTokenVerifier,
+    private val userJwtService: UserJwtService,
     private val userService: UserService
 ) {
     fun login(provider: AuthProvider, request: NativeLoginExchangeRequest? = null): LoginResponse {
@@ -29,11 +30,16 @@ class AuthService(
             )
         }
 
+        val displayName = verifiedUser.displayName ?: request?.displayName ?: provider.defaultDisplayName()
         val response = LoginResponse(
             userId = verifiedUser.providerUserId,
             provider = provider,
-            displayName = verifiedUser.displayName ?: request?.displayName ?: provider.defaultDisplayName(),
-            accessToken = request?.accessToken ?: "mock-access-token-${provider.name.lowercase()}",
+            displayName = displayName,
+            accessToken = userJwtService.issueAccessToken(
+                userId = verifiedUser.providerUserId,
+                provider = provider,
+                displayName = displayName
+            ),
             refreshToken = request?.refreshToken ?: "mock-refresh-token-${provider.name.lowercase()}"
         )
 
