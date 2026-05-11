@@ -29,7 +29,7 @@ class JournalEntryEntity(
     var comfortMessage: String,
     @Column(name = "created_at", nullable = false)
     var createdAt: OffsetDateTime,
-    @OneToMany(mappedBy = "entry", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "entry", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("sortOrder asc, id asc")
     val emotions: MutableList<JournalEmotionEntity> = mutableListOf()
 ) {

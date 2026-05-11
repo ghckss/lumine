@@ -62,17 +62,17 @@ class ScreeningService(
     fun getQuestionnaire(): ScreeningQuestionnaireResponse =
         ScreeningQuestionnaireResponse(
             version = "2026-04-ko-mvp",
-            title = "[Lumine] 마음 결 살펴보기 (10문항)",
-            subtitle = "최근 일주일 동안, 얼마나 자주 이런 마음이 머물렀나요?",
+            title = "[Lumine] 마음 상태 살펴보기 (10문항)",
+            subtitle = "최근 일주일 동안, 아래 상태를 얼마나 자주 느꼈나요?",
             sections = listOf(
                 ScreeningQuestionSectionResponse(
                     id = "core",
-                    title = "마음의 흐름",
+                    title = "최근 상태",
                     items = listOf(
                         ScreeningQuestionItemResponse(
                             id = "q1",
                             kind = "single_choice",
-                            title = "평소 즐겁게 하던 일들이 오늘따라 무채색처럼 느껴졌나요?",
+                            title = "평소 즐겁게 하던 일들이 덜 즐겁게 느껴졌나요?",
                             required = true,
                             options = listOf(
                                 ScreeningQuestionOptionResponse("0", "전혀 그렇지 않음", 0),
@@ -84,7 +84,7 @@ class ScreeningService(
                         ScreeningQuestionItemResponse(
                             id = "q2",
                             kind = "single_choice",
-                            title = "마음 한구석에 설명하기 어려운 가라앉은 기분이 계속 머물렀나요?",
+                            title = "설명하기 어려운 가라앉은 기분이 계속 느껴졌나요?",
                             required = true,
                             options = listOf(
                                 ScreeningQuestionOptionResponse("0", "전혀 그렇지 않음", 0),
@@ -96,7 +96,7 @@ class ScreeningService(
                         ScreeningQuestionItemResponse(
                             id = "q3",
                             kind = "single_choice",
-                            title = "밤새 깊은 잠에 들지 못하거나, 반대로 자고 일어나도 여전히 꿈속인 듯 무거웠나요?",
+                            title = "깊게 잠들기 어렵거나, 자고 일어나도 피곤함이 남았나요?",
                             required = true,
                             options = listOf(
                                 ScreeningQuestionOptionResponse("0", "전혀 그렇지 않음", 0),
@@ -108,7 +108,7 @@ class ScreeningService(
                         ScreeningQuestionItemResponse(
                             id = "q4",
                             kind = "single_choice",
-                            title = "몸에 물을 머금은 듯 무겁고, 사소한 움직임조차 버겁게 느껴진 적이 있나요?",
+                            title = "몸이 무겁고, 사소한 움직임도 버겁게 느껴진 적이 있나요?",
                             required = true,
                             options = listOf(
                                 ScreeningQuestionOptionResponse("0", "전혀 그렇지 않음", 0),
@@ -120,7 +120,7 @@ class ScreeningService(
                         ScreeningQuestionItemResponse(
                             id = "q5",
                             kind = "single_choice",
-                            title = "입맛이 너무 없거나, 반대로 허전한 마음을 채우려 무언가를 계속 찾게 되었나요?",
+                            title = "입맛이 줄었거나, 반대로 무언가를 계속 먹고 싶어진 적이 있나요?",
                             required = true,
                             options = listOf(
                                 ScreeningQuestionOptionResponse("0", "전혀 그렇지 않음", 0),
@@ -132,7 +132,7 @@ class ScreeningService(
                         ScreeningQuestionItemResponse(
                             id = "q6",
                             kind = "single_choice",
-                            title = "내 자신이 조금은 실망스럽거나, 주변 사람들에게 미안한 마음이 불쑥 찾아왔나요?",
+                            title = "스스로가 실망스럽거나, 주변 사람들에게 미안한 마음이 들었나요?",
                             required = true,
                             options = listOf(
                                 ScreeningQuestionOptionResponse("0", "전혀 그렇지 않음", 0),
@@ -144,7 +144,7 @@ class ScreeningService(
                         ScreeningQuestionItemResponse(
                             id = "q7",
                             kind = "single_choice",
-                            title = "책을 읽거나 대화를 나눌 때, 생각이 자꾸만 다른 곳으로 흩어지곤 했나요?",
+                            title = "책을 읽거나 대화를 나눌 때 집중하기 어려웠나요?",
                             required = true,
                             options = listOf(
                                 ScreeningQuestionOptionResponse("0", "전혀 그렇지 않음", 0),
@@ -168,7 +168,7 @@ class ScreeningService(
                         ScreeningQuestionItemResponse(
                             id = "q9",
                             kind = "single_choice",
-                            title = "세상으로부터 조금 떨어져 혼자만의 어둠 속에 숨고 싶다는 생각을 했나요?",
+                            title = "사람들과 거리를 두고 혼자 있고 싶다는 생각이 들었나요?",
                             required = true,
                             options = listOf(
                                 ScreeningQuestionOptionResponse("0", "전혀 그렇지 않음", 0),
@@ -180,7 +180,7 @@ class ScreeningService(
                         ScreeningQuestionItemResponse(
                             id = "q10",
                             kind = "single_choice",
-                            title = "내일의 빛이 오늘보다 더 밝을 거라는 기대가 조금은 흐릿하게 보였나요?",
+                            title = "앞으로 괜찮아질 거라는 기대가 줄어든 것처럼 느껴졌나요?",
                             required = true,
                             options = listOf(
                                 ScreeningQuestionOptionResponse("0", "전혀 그렇지 않음", 0),

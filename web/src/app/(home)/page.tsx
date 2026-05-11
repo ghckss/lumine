@@ -49,20 +49,6 @@ function formatShortDate(date: string) {
   return `${Number(month)}.${Number(day)}`;
 }
 
-function mergeJournalEntries(todayEntry: JournalEntry | null | undefined, history: JournalEntry[] | undefined) {
-  const entriesByDate = new Map<string, JournalEntry>();
-
-  history?.forEach((entry) => {
-    entriesByDate.set(entry.date, entry);
-  });
-
-  if (todayEntry) {
-    entriesByDate.set(todayEntry.date, todayEntry);
-  }
-
-  return Array.from(entriesByDate.values()).sort((a, b) => b.date.localeCompare(a.date));
-}
-
 function getTopEmotionItems(emotions: string[], limit = 4): TopEmotionItem[] {
   const firstSeenIndex = new Map<string, number>();
   const counts = emotions.reduce((acc, emotion, index) => {
@@ -117,13 +103,14 @@ function getMoodInsight(emotions: string[], activeDays: number) {
 
 function buildDashboardDays(
   today: string,
+  dateWindow: string[],
   entries: JournalEntry[],
   screeningDates: string[]
 ): DashboardDay[] {
   const entryByDate = new Map(entries.map((entry) => [entry.date, entry]));
   const screeningDateSet = new Set(screeningDates);
 
-  return getDateWindow(today).map((date) => {
+  return dateWindow.map((date) => {
     const entry = entryByDate.get(date);
 
     return {
@@ -139,19 +126,18 @@ function buildDashboardDays(
 
 export default async function HomePage() {
   const today = getTodayDate();
-  const [todayJournalEntry, journalHistory, screeningHistory] = await Promise.all([
-    serverApi.getJournalEntry(today).catch(() => null),
+  const dateWindow = getDateWindow(today);
+  const [journalEntries, screeningHistory] = await Promise.all([
     serverApi.getJournalHistory(30).catch(() => []),
     serverApi.getScreeningHistory().catch(() => [])
   ]);
 
-  const journalEntries = mergeJournalEntries(todayJournalEntry, journalHistory);
   const latestScreeningDate = screeningHistory?.[0]?.completedDate ?? null;
   const daysSinceLatestScreening = latestScreeningDate ? getDaysBetween(latestScreeningDate, today) : null;
   const shouldShowReflectionPrompt = daysSinceLatestScreening === null || daysSinceLatestScreening >= 30;
   const screeningDates = screeningHistory?.map((item) => item.completedDate) ?? [];
-  const dashboardDays = buildDashboardDays(today, journalEntries, screeningDates);
-  const dashboardDateSet = new Set(getDateWindow(today));
+  const dashboardDays = buildDashboardDays(today, dateWindow, journalEntries, screeningDates);
+  const dashboardDateSet = new Set(dateWindow);
   const recentJournalEntries = journalEntries.filter((entry) => dashboardDateSet.has(entry.date));
   const recentEmotionLabels = recentJournalEntries.flatMap((entry) => entry.emotions.map((emotion) => emotion.label));
   const topEmotionItems = getTopEmotionItems(recentEmotionLabels);

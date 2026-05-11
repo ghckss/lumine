@@ -22,7 +22,7 @@ class JournalService(
             date = LocalDate.of(2026, 4, 28),
             emotions = listOf("차분함", "안도감", "고마움"),
             body = "오전에 조금 바빴지만, 저녁에는 한숨 돌릴 수 있었어요.",
-            comfortMessage = "바쁜 하루 끝에 겨우 숨을 고른 그 마음을, 잠시 편하게 내려놓아도 괜찮아요."
+            comfortMessage = "바쁜 하루를 지나온 뒤라면, 지금은 잠시 편하게 쉬어도 괜찮아요."
         )
         saveSeed(
             date = LocalDate.of(2026, 4, 27),
@@ -38,20 +38,12 @@ class JournalService(
 
     @Transactional(readOnly = true)
     fun getEntries(limit: Int): List<JournalEntryResponse> =
-        journalEntryRepository.findAllByOrderByEntryDateDescCreatedAtDesc(PageRequest.of(0, limit))
-            .map { it.toResponse() }
+        findRecentEntriesWithEmotions(limit).map { it.toResponse() }
 
     @Transactional
     fun save(request: JournalEntryRequest): JournalEntryResponse {
         val targetDate = request.date ?: Time.today()
-        val recentEmotionSummary = getEntries(10)
-            .flatMap { it.emotions }
-            .groupingBy { it.label }
-            .eachCount()
-            .entries
-            .sortedByDescending { it.value }
-            .take(3)
-            .map { it.key }
+        val recentEmotionSummary = getRecentEmotionSummary()
 
         val comfortMessage = comfortMessageGenerator.generate(
             JournalComfortContext(
@@ -92,6 +84,27 @@ class JournalService(
         )
         entity.replaceEmotions(emotions)
         journalEntryRepository.save(entity)
+    }
+
+    private fun getRecentEmotionSummary(): List<String> =
+        findRecentEntriesWithEmotions(10)
+            .flatMap { entry -> entry.emotions.map { emotion -> emotion.label } }
+            .groupingBy { it }
+            .eachCount()
+            .entries
+            .sortedByDescending { it.value }
+            .take(3)
+            .map { it.key }
+
+    private fun findRecentEntriesWithEmotions(limit: Int): List<JournalEntryEntity> {
+        val ids = journalEntryRepository.findRecentIds(PageRequest.of(0, limit))
+        if (ids.isEmpty()) {
+            return emptyList()
+        }
+
+        val orderById = ids.withIndex().associate { it.value to it.index }
+        return journalEntryRepository.findAllByIdIn(ids)
+            .sortedBy { orderById[it.id] ?: Int.MAX_VALUE }
     }
 
     private fun JournalEntryEntity.toResponse(): JournalEntryResponse =

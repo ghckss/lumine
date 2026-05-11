@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component
 @Component
 class SimpleComfortMessageGenerator : ComfortMessageGenerator {
     private val heavyEmotions = setOf("지침", "답답함", "무거움", "불안함", "서운함", "외로움", "분노", "괴로움")
-    private val fallback = "오늘 마음을 여기까지 데려오느라 애썼어요. 잠시 그대로 쉬어가도 괜찮아요."
+    private val fallback = "오늘 하루를 지나오느라 힘이 들었다면, 잠시 쉬어가도 괜찮아요."
 
     override fun generate(context: JournalComfortContext): String {
         if (context.hasSafetySignal) {
@@ -17,10 +17,10 @@ class SimpleComfortMessageGenerator : ComfortMessageGenerator {
 
         return when {
             heavyCount > 0 ->
-                "오늘 ${leadEmotion}이 오래 머물렀다면, 그 마음을 견디느라 많이 애썼을 거예요."
+                "오늘 ${leadEmotion}이 크게 느껴졌다면, 잠시 그 감정을 내려놓을 시간이 필요할 수 있어요."
 
             context.body.isNotBlank() ->
-                "오늘의 일을 말로 꺼내기까지도 쉽지 않았을 텐데, 그 마음을 조용히 들어둘게요."
+                "오늘의 일을 말로 꺼내는 것만으로도 힘이 들 수 있어요. 지금은 천천히 쉬어가도 괜찮아요."
 
             else -> fallback
         }

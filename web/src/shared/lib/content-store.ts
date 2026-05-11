@@ -50,10 +50,10 @@ function comfortMessageForGuest(emotions: string[]) {
   const leadEmotion = emotions[0] ?? "마음";
 
   if (heavyCount > 0) {
-    return `오늘 ${leadEmotion}이 오래 머물렀다면, 그 마음을 견디느라 많이 애썼을 거예요.`;
+    return `오늘 ${leadEmotion}이 크게 느껴졌다면, 잠시 그 감정을 내려놓을 시간이 필요할 수 있어요.`;
   }
 
-  return "오늘 마음을 여기까지 데려오느라 애썼어요. 잠시 그대로 쉬어가도 괜찮아요.";
+  return "오늘 하루를 지나오느라 힘이 들었다면, 잠시 쉬어가도 괜찮아요.";
 }
 
 function addWeeks(date: Date, weeks: number) {
@@ -76,9 +76,9 @@ function evaluateGuestScreening(
   if (requiresSafetyPrompt) {
     return {
       completedDate: getTodayDate(),
-      publicSummary: "오늘은 유난히 무거운 결이 오래 머문 것 같아요.",
-      publicComfortMessage: "지금 이 마음을 혼자 오래 붙잡고 있지 않았으면 해요. 먼저 기댈 수 있는 연결을 확인해봐요.",
-      recommendedActions: ["도움 연결 화면을 먼저 열어봐요.", "혼자 있기보다 가까운 사람에게 지금 상태를 알려봐요.", "괜찮다면 짧게라도 지금 마음을 남겨봐요."],
+      publicSummary: "지금은 혼자 견디기엔 부담이 클 수 있어요.",
+      publicComfortMessage: "이런 순간에는 혼자서 다 버티려 하지 않아도 괜찮아요. 가까운 도움과 먼저 연결되는 것이 필요할 수 있어요.",
+      recommendedActions: ["도움 연결 화면을 먼저 열어봐요.", "믿을 수 있는 사람에게 지금 상태를 알려봐요.", "짧게라도 지금 느끼는 것을 남겨봐요."],
       recommendedRescreenAt: addWeeks(new Date(), 4),
       requiresSafetyPrompt: true
     };
@@ -98,8 +98,8 @@ function evaluateGuestScreening(
   if (totalScore >= 10) {
     return {
       completedDate: getTodayDate(),
-      publicSummary: "버거움이 여기저기 겹쳐 있었던 하루 같아요.",
-      publicComfortMessage: "조금 지친 흐름이 보이네요. 오늘은 마음을 다그치지 말고, 한숨 돌릴 틈을 만들어봐요.",
+      publicSummary: "최근 마음이 쉽게 편해지지 않았을 수 있어요.",
+      publicComfortMessage: "부담이 겹치면 사소한 일도 오래 남을 수 있어요. 지금은 그 감정을 억지로 정리하려 하기보다 잠시 쉬어가도 괜찮아요.",
       recommendedActions: ["하루를 가장 힘들게 만든 순간을 짧게 적어봐요.", "지금 당장 하지 않아도 되는 일 하나를 덜어내봐요.", "내일 다시 확인할 수 있게 오늘 감정을 남겨봐요."],
       recommendedRescreenAt: addWeeks(new Date(), 4),
       requiresSafetyPrompt: false
@@ -108,9 +108,9 @@ function evaluateGuestScreening(
 
   return {
     completedDate: getTodayDate(),
-    publicSummary: "지금의 마음을 비교적 차분하게 지나오고 있는 것 같아요.",
-    publicComfortMessage: "오늘의 결을 이렇게 살펴본 것만으로도 충분해요. 지금의 평온을 가볍게 붙잡아두면 좋아요.",
-    recommendedActions: ["편안했던 순간을 하나만 더 떠올려봐요.", "오늘의 감정을 짧게 기록해두면 흐름이 더 잘 보여요.", "다음에 다시 돌아볼 수 있게 이 마음을 조용히 남겨봐요."],
+    publicSummary: "오늘은 비교적 크게 무겁지 않은 상태로 보여요.",
+    publicComfortMessage: "크게 흔들리지 않은 날도 그냥 지나치지 않아도 괜찮아요. 편했던 순간이 있었다면 짧게 남겨두어도 좋아요.",
+    recommendedActions: ["편안했던 순간을 하나만 더 떠올려봐요.", "오늘의 감정을 짧게 기록해봐요.", "필요할 때 다시 상태를 확인해봐요."],
     recommendedRescreenAt: addWeeks(new Date(), 4),
     requiresSafetyPrompt: false
   };

@@ -32,6 +32,7 @@ export function WebViewContainer({ session, profile, onLogout }: WebViewContaine
   const webViewRef = useRef<WebView>(null);
   const pendingEventsRef = useRef<Array<{ command: string; params?: Record<string, unknown> }>>([]);
   const isWebReadyRef = useRef(false);
+  const hasBootstrappedRef = useRef(false);
   const [activeTab, setActiveTab] = useState<TabKey>("home");
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadError, setHasLoadError] = useState(false);
@@ -39,14 +40,18 @@ export function WebViewContainer({ session, profile, onLogout }: WebViewContaine
   const source = useMemo(() => ({ uri: WEB_BASE_URL }), []);
   const isGuest = !session;
 
+  const injectAppEvent = useCallback((command: string, params?: Record<string, unknown>) => {
+    webViewRef.current?.injectJavaScript(createAppToWebPayload(command, params));
+  }, []);
+
   const sendAppEvent = useCallback((command: string, params?: Record<string, unknown>) => {
     if (!isWebReadyRef.current || !webViewRef.current) {
       pendingEventsRef.current.push({ command, params });
       return;
     }
 
-    webViewRef.current.injectJavaScript(createAppToWebPayload(command, params));
-  }, []);
+    injectAppEvent(command, params);
+  }, [injectAppEvent]);
 
   const flushPendingEvents = useCallback(() => {
     if (!webViewRef.current || !isWebReadyRef.current || pendingEventsRef.current.length === 0) {
@@ -54,14 +59,18 @@ export function WebViewContainer({ session, profile, onLogout }: WebViewContaine
     }
 
     pendingEventsRef.current.forEach(({ command, params }) => {
-      webViewRef.current?.injectJavaScript(createAppToWebPayload(command, params));
+      injectAppEvent(command, params);
     });
     pendingEventsRef.current = [];
-  }, []);
+  }, [injectAppEvent]);
 
   const bootstrapWeb = useCallback(() => {
+    if (!isWebReadyRef.current || !webViewRef.current || hasBootstrappedRef.current) {
+      return;
+    }
+
     setHasLoadError(false);
-    sendAppEvent("auth.bootstrap", isGuest
+    injectAppEvent("auth.bootstrap", isGuest
       ? {
           status: "guest",
           displayName: "손님으로 머무는 오늘"
@@ -81,9 +90,10 @@ export function WebViewContainer({ session, profile, onLogout }: WebViewContaine
               }
             : null
         });
-    sendAppEvent("network.changed", { online: true });
+    injectAppEvent("network.changed", { online: true });
+    hasBootstrappedRef.current = true;
     flushPendingEvents();
-  }, [flushPendingEvents, isGuest, profile, sendAppEvent, session]);
+  }, [flushPendingEvents, injectAppEvent, isGuest, profile, session]);
 
   const navigateToTab = useCallback((tab: TabKey) => {
     setActiveTab(tab);
@@ -109,6 +119,7 @@ export function WebViewContainer({ session, profile, onLogout }: WebViewContaine
       if (envelope.payload.command === "navigation.ready") {
         isWebReadyRef.current = true;
         setIsLoading(false);
+        bootstrapWeb();
         return;
       }
 
@@ -132,7 +143,16 @@ export function WebViewContainer({ session, profile, onLogout }: WebViewContaine
         })
       );
     }
-  }, [onLogout]);
+  }, [bootstrapWeb, onLogout]);
+
+  useEffect(() => {
+    if (!isWebReadyRef.current) {
+      return;
+    }
+
+    hasBootstrappedRef.current = false;
+    bootstrapWeb();
+  }, [bootstrapWeb]);
 
   const handleAppStateChange = useCallback(
     (nextAppState: AppStateStatus) => {
@@ -164,7 +184,9 @@ export function WebViewContainer({ session, profile, onLogout }: WebViewContaine
   const reloadWebView = useCallback(() => {
     setHasLoadError(false);
     setIsLoading(true);
+    pendingEventsRef.current = [];
     isWebReadyRef.current = false;
+    hasBootstrappedRef.current = false;
     setWebViewKey((prev) => prev + 1);
   }, []);
 
@@ -183,9 +205,7 @@ export function WebViewContainer({ session, profile, onLogout }: WebViewContaine
               injectedJavaScriptBeforeContentLoaded={injectedBridgeScript}
               onMessage={handleMessage}
               onLoadEnd={() => {
-                isWebReadyRef.current = true;
-                setIsLoading(false);
-                bootstrapWeb();
+                setHasLoadError(false);
               }}
               onNavigationStateChange={(navState) => {
                 handleNavigationStateChange(navState);
@@ -195,6 +215,7 @@ export function WebViewContainer({ session, profile, onLogout }: WebViewContaine
               }}
               onError={() => {
                 isWebReadyRef.current = false;
+                hasBootstrappedRef.current = false;
                 setIsLoading(false);
                 setHasLoadError(true);
               }}

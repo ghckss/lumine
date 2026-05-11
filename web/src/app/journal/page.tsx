@@ -10,9 +10,7 @@ import {
   heavyEmotionOptions,
   positiveEmotionOptions
 } from "./_component/EmotionPickerSection";
-import { JournalArchiveLinkSection } from "./_component/JournalArchiveLinkSection";
 import { JournalBodySection } from "./_component/JournalBodySection";
-import { JournalHeroSection } from "./_component/JournalHeroSection";
 import { JournalSubmitButton } from "./_component/JournalSubmitButton";
 
 export default function JournalPage() {
@@ -96,8 +94,6 @@ export default function JournalPage() {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-xl flex-col gap-8 px-5 py-6 sm:px-6 sm:py-8">
       <ComfortOverlay message={comfortOverlay} />
-      <JournalHeroSection />
-      <JournalArchiveLinkSection />
       <EmotionPickerSection
         customEmotion={customEmotion}
         customSelectedEmotions={customSelectedEmotions}

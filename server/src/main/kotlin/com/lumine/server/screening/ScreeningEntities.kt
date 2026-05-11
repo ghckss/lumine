@@ -38,10 +38,10 @@ class ScreeningSessionEntity(
     @Enumerated(EnumType.STRING)
     @Column(name = "internal_chronicity", nullable = false)
     var internalChronicity: ScreeningChronicity,
-    @OneToMany(mappedBy = "session", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "session", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("sortOrder asc, id asc")
     val recommendedActions: MutableList<ScreeningRecommendedActionEntity> = mutableListOf(),
-    @OneToMany(mappedBy = "session", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "session", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("id asc")
     val answers: MutableList<ScreeningAnswerEntity> = mutableListOf()
 ) {

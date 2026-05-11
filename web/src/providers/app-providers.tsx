@@ -16,19 +16,24 @@ declare global {
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
-  const [a, setA] = useState<number>();
-
-  useEffect(() => { setA(Date.now()) }, [])
 
   return (
     <QueryClientProvider client={queryClient}>
       <BridgeBootstrapProvider>
-        {a}
-        <BridgeRouteReadySync />
-        <BridgeNavigationSync />
-        <BootstrapSessionSync>{children}</BootstrapSessionSync>
+        <BridgeRuntimeSync />
+        {children}
       </BridgeBootstrapProvider>
     </QueryClientProvider>
+  );
+}
+
+function BridgeRuntimeSync() {
+  return (
+    <>
+      <BridgeRouteReadySync />
+      <BridgeNavigationSync />
+      <BootstrapSessionSync />
+    </>
   );
 }
 
@@ -83,12 +88,12 @@ function BridgeNavigationSync() {
   return null;
 }
 
-function BootstrapSessionSync({ children }: { children: React.ReactNode }) {
+function BootstrapSessionSync() {
   const bootstrap = useBridgeBootstrap();
 
   useEffect(() => {
     setApiAccessToken(bootstrap.mode === "authenticated" ? bootstrap.accessToken : null);
   }, [bootstrap.accessToken, bootstrap.mode]);
 
-  return <>{children}</>;
+  return null;
 }

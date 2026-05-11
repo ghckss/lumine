@@ -1,82 +1,27 @@
-"use client";
-
-import { useEffect, useRef, useState } from "react";
-
-type Ripple = {
-  id: number;
-  x: number;
-  y: number;
-  size: number;
-  delay: number;
-};
+const ripples = [
+  { left: "12%", top: "58%", size: "21rem", delay: "0s", duration: "7.2s" },
+  { left: "72%", top: "28%", size: "18rem", delay: "2.4s", duration: "7.8s" },
+  { left: "42%", top: "88%", size: "24rem", delay: "4.8s", duration: "8.4s" }
+] as const;
 
 export function HomeHeroSection() {
-  const areaRef = useRef<HTMLDivElement | null>(null);
-  const rippleIdRef = useRef(0);
-  const timeoutRef = useRef<number | null>(null);
-  const [ripples, setRipples] = useState<Ripple[]>([]);
-
-  useEffect(() => {
-    const createRippleGroup = () => {
-      const area = areaRef.current;
-      if (!area) return;
-
-      const { width, height } = area.getBoundingClientRect();
-      const x = Math.random() * width;
-      const y = Math.random() * height;
-      const maxDistance = Math.max(
-        Math.hypot(x, y),
-        Math.hypot(width - x, y),
-        Math.hypot(x, height - y),
-        Math.hypot(width - x, height - y),
-      );
-      const size = maxDistance * 2;
-      const count = Math.random() > 0.5 ? 2 : 1;
-      const nextRipples: Ripple[] = Array.from({ length: count }, (_, index) => ({
-        id: rippleIdRef.current++,
-        x,
-        y,
-        size,
-        delay: index * 0.2,
-      }));
-
-      setRipples((prev) => [...prev, ...nextRipples]);
-
-      window.setTimeout(() => {
-        setRipples((prev) =>
-          prev.filter((ripple) => !nextRipples.some((next) => next.id === ripple.id)),
-        );
-      }, 5400);
-
-      timeoutRef.current = window.setTimeout(createRippleGroup, 5000 + Math.random() * 1800);
-    };
-
-    createRippleGroup();
-
-    return () => {
-      if (timeoutRef.current) {
-        window.clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
-
   return (
-    <header ref={areaRef} className="relative overflow-hidden rounded-[28px] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-primary)_88%,black),color-mix(in_srgb,var(--color-primary)_62%,var(--color-on-primary-container))_100%)] px-5 py-5 text-white shadow-moon sm:px-6 sm:py-6">
+    <header className="relative overflow-hidden rounded-[28px] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-primary)_88%,black),color-mix(in_srgb,var(--color-primary)_62%,var(--color-on-primary-container))_100%)] px-5 py-5 text-white shadow-moon sm:px-6 sm:py-6">
       <div className="absolute inset-x-0 top-0 h-20 bg-[linear-gradient(180deg,rgba(255,255,255,0.16),rgba(255,255,255,0))]" />
       <div className="absolute right-[-30px] top-[-34px] h-32 w-32 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.22),rgba(255,255,255,0.02)_68%)]" />
       <div className="absolute bottom-[-46px] left-[-22px] h-20 w-48 rounded-t-[999px] bg-white/5 blur-2xl" />
 
       {ripples.map((ripple) => (
         <span
-          key={ripple.id}
-          className="pointer-events-none absolute rounded-full border-[5px] order-primaryFixed/70 bg-primaryFixed/20 bg-transparent"
+          key={`${ripple.left}-${ripple.top}`}
+          className="pointer-events-none absolute rounded-full border-[5px] border-primaryFixed/45 bg-primaryFixed/10 motion-reduce:hidden"
           style={{
-            left: ripple.x,
-            top: ripple.y,
+            left: ripple.left,
+            top: ripple.top,
             width: ripple.size,
             height: ripple.size,
-            animation: `ripple 5s linear ${ripple.delay}s both`,
-            transform: "translate(-50%, -50%) scale(0)",
+            animation: `ripple ${ripple.duration} linear ${ripple.delay} infinite`,
+            transform: "translate(-50%, -50%) scale(0)"
           }}
         />
       ))}
