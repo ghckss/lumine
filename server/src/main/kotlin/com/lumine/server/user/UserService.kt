@@ -1,72 +1,60 @@
 package com.lumine.server.user
 
 import com.lumine.server.common.Time
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
-import java.util.concurrent.atomic.AtomicReference
+import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.server.ResponseStatusException
+import java.util.UUID
 
 @Service
-class UserService {
-    private val currentUser = AtomicReference(
-        UserProfile(
-            userId = "mock-user-001",
-            provider = AuthProvider.KAKAO,
-            displayName = "하린",
-            gender = Gender.FEMALE,
-            birthDate = java.time.LocalDate.of(1997, 5, 12),
-            agreedToTerms = true,
-            signedUpAt = Time.now().minusDays(14)
-        )
-    )
-
-    fun getCurrentUser(): UserMeResponse = currentUser.get().toResponse()
-
-    fun syncCurrentUser(
-        userId: String,
+class UserService(
+    private val userRepository: UserRepository
+) {
+    @Transactional
+    fun findOrCreateFromLogin(
         provider: AuthProvider,
+        providerSubject: String,
         displayName: String
-    ) {
-        val previous = currentUser.get()
-        currentUser.set(
-            previous.copy(
-                userId = userId,
+    ): UserMeResponse {
+        val user = userRepository.findByProviderAndProviderSubject(provider, providerSubject)
+            ?: UserEntity(
+                id = UUID.randomUUID().toString(),
                 provider = provider,
+                providerSubject = providerSubject,
                 displayName = displayName
             )
-        )
+        user.displayName = displayName
+        return userRepository.save(user).toResponse()
     }
 
-    fun clearCurrentUser() {
-        currentUser.set(
-            UserProfile(
-                userId = "mock-user-001",
-                provider = AuthProvider.KAKAO,
-                displayName = "하린",
-                gender = Gender.FEMALE,
-                birthDate = java.time.LocalDate.of(1997, 5, 12),
-                agreedToTerms = true,
-                signedUpAt = Time.now().minusDays(14)
-            )
-        )
+    @Transactional(readOnly = true)
+    fun exists(userId: String): Boolean = userRepository.existsById(userId)
+
+    @Transactional(readOnly = true)
+    fun getCurrentUser(userId: String): UserMeResponse = requireUser(userId).toResponse()
+
+    @Transactional
+    fun upsertProfile(userId: String, request: UpsertUserProfileRequest): UserMeResponse {
+        val user = requireUser(userId)
+        user.gender = request.gender
+        user.birthDate = request.birthDate
+        user.agreedToTerms = request.agreedToTerms
+        user.signedUpAt = user.signedUpAt ?: Time.now()
+        return userRepository.save(user).toResponse()
     }
 
-    fun upsertProfile(request: UpsertUserProfileRequest): UserMeResponse {
-        val updated = UserProfile(
-            userId = currentUser.get().userId,
-            provider = request.provider!!,
-            displayName = request.displayName!!.trim(),
-            gender = request.gender,
-            birthDate = request.birthDate,
-            agreedToTerms = request.agreedToTerms,
-            signedUpAt = currentUser.get().signedUpAt ?: Time.now()
-        )
+    @Transactional(readOnly = true)
+    fun requireEntity(userId: String): UserEntity = requireUser(userId)
 
-        currentUser.set(updated)
-        return updated.toResponse()
-    }
+    private fun requireUser(userId: String): UserEntity =
+        userRepository.findById(userId).orElseThrow {
+            ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authenticated user no longer exists.")
+        }
 
-    private fun UserProfile.toResponse(): UserMeResponse =
+    private fun UserEntity.toResponse(): UserMeResponse =
         UserMeResponse(
-            userId = userId,
+            userId = id,
             provider = provider,
             displayName = displayName,
             gender = gender,

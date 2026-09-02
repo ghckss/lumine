@@ -31,31 +31,27 @@ class AuthService(
         }
 
         val displayName = verifiedUser.displayName ?: request?.displayName ?: provider.defaultDisplayName()
-        val response = LoginResponse(
-            userId = verifiedUser.providerUserId,
+        val user = userService.findOrCreateFromLogin(
             provider = provider,
-            displayName = displayName,
+            providerSubject = verifiedUser.providerUserId,
+            displayName = displayName
+        )
+        val response = LoginResponse(
+            userId = user.userId,
+            provider = provider,
+            displayName = user.displayName,
             accessToken = userJwtService.issueAccessToken(
-                userId = verifiedUser.providerUserId,
+                userId = user.userId,
                 provider = provider,
-                displayName = displayName
+                displayName = user.displayName
             ),
             refreshToken = request?.refreshToken ?: "mock-refresh-token-${provider.name.lowercase()}"
-        )
-
-        userService.syncCurrentUser(
-            userId = response.userId,
-            provider = response.provider,
-            displayName = response.displayName
         )
 
         return response
     }
 
-    fun logout(): LogoutResponse {
-        userService.clearCurrentUser()
-        return LogoutResponse(success = true)
-    }
+    fun logout(): LogoutResponse = LogoutResponse(success = true)
 
     private fun NativeLoginExchangeRequest?.isMockLoginRequest(provider: AuthProvider): Boolean {
         if (this == null) {

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.lumine.server.user.AuthProvider
 import org.springframework.stereotype.Service
 import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 import java.time.Instant
 import java.util.Base64
 import javax.crypto.Mac
@@ -41,6 +42,29 @@ class UserJwtService(
         return "$signingInput.${base64Url(signature)}"
     }
 
+    fun verifyAccessToken(token: String): AuthenticatedUser? = runCatching {
+        val parts = token.split('.')
+        require(parts.size == 3)
+
+        val header = objectMapper.readTree(base64UrlDecode(parts[0]))
+        require(header.path("alg").asText() == "HS256")
+        require(header.path("typ").asText() == "JWT")
+
+        val signingInput = "${parts[0]}.${parts[1]}"
+        require(MessageDigest.isEqual(hmacSha256(signingInput), base64UrlDecode(parts[2])))
+
+        val payload = objectMapper.readTree(base64UrlDecode(parts[1]))
+        require(payload.path("iss").asText() == authProperties.jwt.issuer)
+        require(payload.path("exp").asLong(0) > Instant.now().epochSecond)
+
+        val userId = payload.path("sub").asText().takeIf { it.isNotBlank() } ?: error("Missing subject")
+        val permission = UserPermission.entries.firstOrNull {
+            it.value == payload.path("permission").asText()
+        } ?: error("Invalid permission")
+
+        AuthenticatedUser(userId = userId, permission = permission)
+    }.getOrNull()
+
     private fun base64UrlJson(value: Map<String, Any>): String =
         base64Url(objectMapper.writeValueAsBytes(value))
 
@@ -52,6 +76,9 @@ class UserJwtService(
 
     private fun base64Url(value: ByteArray): String =
         Base64.getUrlEncoder().withoutPadding().encodeToString(value)
+
+    private fun base64UrlDecode(value: String): ByteArray =
+        Base64.getUrlDecoder().decode(value)
 }
 
 enum class UserPermission(val value: String) {
