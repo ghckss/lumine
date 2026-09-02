@@ -1,8 +1,10 @@
 package com.lumine.server.journal
 
+import com.lumine.server.auth.AuthenticatedUser
 import com.lumine.server.global.api.ApiResponse
 import jakarta.validation.Valid
 import org.springframework.format.annotation.DateTimeFormat
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -18,16 +20,19 @@ class JournalController(
 ) {
     @GetMapping
     fun getEntry(
+        @AuthenticationPrincipal principal: AuthenticatedUser,
         @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: LocalDate
-    ): ApiResponse<JournalEntryResponse?> = ApiResponse(journalService.getEntry(date))
+    ): ApiResponse<JournalEntryResponse?> = ApiResponse(journalService.getEntry(principal.userId, date))
 
     @GetMapping("/history")
     fun getEntries(
+        @AuthenticationPrincipal principal: AuthenticatedUser,
         @RequestParam(name = "limit", defaultValue = "10") limit: Int
-    ): ApiResponse<List<JournalEntryResponse>> = ApiResponse(journalService.getEntries(limit))
+    ): ApiResponse<List<JournalEntryResponse>> = ApiResponse(journalService.getEntries(principal.userId, limit))
 
     @PostMapping
     fun saveEntry(
+        @AuthenticationPrincipal principal: AuthenticatedUser,
         @Valid @RequestBody request: JournalEntryRequest
-    ): ApiResponse<JournalEntryResponse> = ApiResponse(journalService.save(request))
+    ): ApiResponse<JournalEntryResponse> = ApiResponse(journalService.save(principal.userId, request))
 }

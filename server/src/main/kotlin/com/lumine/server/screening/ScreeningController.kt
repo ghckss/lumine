@@ -1,7 +1,9 @@
 package com.lumine.server.screening
 
+import com.lumine.server.auth.AuthenticatedUser
 import com.lumine.server.global.api.ApiResponse
 import jakarta.validation.Valid
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -19,14 +21,19 @@ class ScreeningController(
 
     @PostMapping("/submissions")
     fun submit(
+        @AuthenticationPrincipal principal: AuthenticatedUser,
         @Valid @RequestBody request: ScreeningSubmissionRequest
-    ): ApiResponse<ScreeningResultResponse> = ApiResponse(screeningService.submit(request))
+    ): ApiResponse<ScreeningResultResponse> = ApiResponse(screeningService.submit(principal.userId, request))
 
     @GetMapping("/latest")
-    fun getLatest(): ApiResponse<ScreeningResultResponse?> =
-        ApiResponse(screeningService.getLatestResult())
+    fun getLatest(
+        @AuthenticationPrincipal principal: AuthenticatedUser
+    ): ApiResponse<ScreeningResultResponse?> =
+        ApiResponse(screeningService.getLatestResult(principal.userId))
 
     @GetMapping("/history")
-    fun getHistory(): ApiResponse<List<ScreeningHistoryItemResponse>> =
-        ApiResponse(screeningService.getHistory())
+    fun getHistory(
+        @AuthenticationPrincipal principal: AuthenticatedUser
+    ): ApiResponse<List<ScreeningHistoryItemResponse>> =
+        ApiResponse(screeningService.getHistory(principal.userId))
 }

@@ -1,5 +1,6 @@
 package com.lumine.server.screening
 
+import com.lumine.server.user.UserEntity
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -22,6 +23,9 @@ class ScreeningSessionEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    var user: UserEntity?,
     @Column(name = "completed_date", nullable = false)
     var completedDate: LocalDate,
     @Column(name = "public_summary", nullable = false, columnDefinition = "text")

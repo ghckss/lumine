@@ -1,7 +1,7 @@
 package com.lumine.server.journal
 
 import com.lumine.server.common.Time
-import jakarta.annotation.PostConstruct
+import com.lumine.server.user.UserService
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -10,40 +10,21 @@ import java.time.LocalDate
 @Service
 class JournalService(
     private val comfortMessageGenerator: ComfortMessageGenerator,
-    private val journalEntryRepository: JournalEntryRepository
+    private val journalEntryRepository: JournalEntryRepository,
+    private val userService: UserService
 ) {
-    @PostConstruct
-    fun seed() {
-        if (journalEntryRepository.count() > 0) {
-            return
-        }
-
-        saveSeed(
-            date = LocalDate.of(2026, 4, 28),
-            emotions = listOf("차분함", "안도감", "고마움"),
-            body = "오전에 조금 바빴지만, 저녁에는 한숨 돌릴 수 있었어요.",
-            comfortMessage = "바쁜 하루를 지나온 뒤라면, 지금은 잠시 편하게 쉬어도 괜찮아요."
-        )
-        saveSeed(
-            date = LocalDate.of(2026, 4, 27),
-            emotions = listOf("지침", "답답함", "차분함"),
-            body = "하루가 길었지만, 저녁이 되니 조금은 정리되는 느낌이 들었어요.",
-            comfortMessage = "길었던 하루를 지나오느라 지쳤을 텐데, 지금은 조금 천천히 쉬어도 괜찮아요."
-        )
-    }
+    @Transactional(readOnly = true)
+    fun getEntry(userId: String, date: LocalDate): JournalEntryResponse? =
+        journalEntryRepository.findByUserIdAndEntryDate(userId, date)?.toResponse()
 
     @Transactional(readOnly = true)
-    fun getEntry(date: LocalDate): JournalEntryResponse? =
-        journalEntryRepository.findByEntryDate(date)?.toResponse()
-
-    @Transactional(readOnly = true)
-    fun getEntries(limit: Int): List<JournalEntryResponse> =
-        findRecentEntriesWithEmotions(limit).map { it.toResponse() }
+    fun getEntries(userId: String, limit: Int): List<JournalEntryResponse> =
+        findRecentEntriesWithEmotions(userId, limit).map { it.toResponse() }
 
     @Transactional
-    fun save(request: JournalEntryRequest): JournalEntryResponse {
+    fun save(userId: String, request: JournalEntryRequest): JournalEntryResponse {
         val targetDate = request.date ?: Time.today()
-        val recentEmotionSummary = getRecentEmotionSummary()
+        val recentEmotionSummary = getRecentEmotionSummary(userId)
 
         val comfortMessage = comfortMessageGenerator.generate(
             JournalComfortContext(
@@ -54,8 +35,9 @@ class JournalService(
             )
         )
 
-        val entity = journalEntryRepository.findByEntryDate(targetDate)
+        val entity = journalEntryRepository.findByUserIdAndEntryDate(userId, targetDate)
             ?: JournalEntryEntity(
+                user = userService.requireEntity(userId),
                 entryDate = targetDate,
                 body = "",
                 comfortMessage = comfortMessage,
@@ -70,24 +52,8 @@ class JournalService(
         return journalEntryRepository.save(entity).toResponse()
     }
 
-    private fun saveSeed(
-        date: LocalDate,
-        emotions: List<String>,
-        body: String,
-        comfortMessage: String
-    ) {
-        val entity = JournalEntryEntity(
-            entryDate = date,
-            body = body,
-            comfortMessage = comfortMessage,
-            createdAt = Time.now().minusDays(1)
-        )
-        entity.replaceEmotions(emotions)
-        journalEntryRepository.save(entity)
-    }
-
-    private fun getRecentEmotionSummary(): List<String> =
-        findRecentEntriesWithEmotions(10)
+    private fun getRecentEmotionSummary(userId: String): List<String> =
+        findRecentEntriesWithEmotions(userId, 10)
             .flatMap { entry -> entry.emotions.map { emotion -> emotion.label } }
             .groupingBy { it }
             .eachCount()
@@ -96,14 +62,14 @@ class JournalService(
             .take(3)
             .map { it.key }
 
-    private fun findRecentEntriesWithEmotions(limit: Int): List<JournalEntryEntity> {
-        val ids = journalEntryRepository.findRecentIds(PageRequest.of(0, limit))
+    private fun findRecentEntriesWithEmotions(userId: String, limit: Int): List<JournalEntryEntity> {
+        val ids = journalEntryRepository.findRecentIds(userId, PageRequest.of(0, limit))
         if (ids.isEmpty()) {
             return emptyList()
         }
 
         val orderById = ids.withIndex().associate { it.value to it.index }
-        return journalEntryRepository.findAllByIdIn(ids)
+        return journalEntryRepository.findAllByIdInAndUserId(ids, userId)
             .sortedBy { orderById[it.id] ?: Int.MAX_VALUE }
     }
 

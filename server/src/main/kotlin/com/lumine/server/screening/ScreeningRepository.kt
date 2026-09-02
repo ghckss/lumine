@@ -5,8 +5,8 @@ import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.data.jpa.repository.JpaRepository
 
 interface ScreeningSessionRepository : JpaRepository<ScreeningSessionEntity, Long> {
-    fun findAllByOrderByCompletedDateDescIdDesc(pageable: Pageable): List<ScreeningSessionEntity>
+    fun findAllByUserIdOrderByCompletedDateDescIdDesc(userId: String, pageable: Pageable): List<ScreeningSessionEntity>
 
     @EntityGraph(attributePaths = ["recommendedActions"])
-    fun findTopByOrderByCompletedDateDescIdDesc(): ScreeningSessionEntity?
+    fun findTopByUserIdOrderByCompletedDateDescIdDesc(userId: String): ScreeningSessionEntity?
 }

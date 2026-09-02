@@ -1,64 +1,17 @@
 package com.lumine.server.screening
 
 import com.lumine.server.common.Time
-import jakarta.annotation.PostConstruct
+import com.lumine.server.user.UserService
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDate
 
 @Service
 class ScreeningService(
     private val screeningNarrativeGenerator: ScreeningNarrativeGenerator,
-    private val screeningSessionRepository: ScreeningSessionRepository
+    private val screeningSessionRepository: ScreeningSessionRepository,
+    private val userService: UserService
 ) {
-    @PostConstruct
-    fun seed() {
-        if (screeningSessionRepository.count() > 0) {
-            return
-        }
-
-        val result = ScreeningResultResponse(
-            publicSummary = "요즘 혼자 버티는 시간이 조금 길어졌던 것 같아요.",
-            publicComfortMessage = "오늘 상태를 들여다본 것만으로도 충분히 의미 있어요.",
-            recommendedActions = listOf(
-                "오늘 감정을 짧게라도 기록해봐요.",
-                "믿을 수 있는 사람 한 명에게 지금 마음을 나눠봐요.",
-                "며칠 더 힘들다면 다시 한 번 상태를 살펴봐요."
-            ),
-            recommendedRescreenAt = LocalDate.of(2026, 4, 29),
-            requiresSafetyPrompt = false
-        )
-
-        screeningSessionRepository.save(
-            ScreeningSessionEntity(
-                completedDate = LocalDate.of(2026, 4, 1),
-                publicSummary = result.publicSummary,
-                publicComfortMessage = result.publicComfortMessage,
-                recommendedRescreenAt = result.recommendedRescreenAt,
-                requiresSafetyPrompt = result.requiresSafetyPrompt,
-                internalSubtype = ScreeningSubtype.STRESS_ADAPTATION_POSSIBLE,
-                internalChronicity = ScreeningChronicity.SHORT_TERM
-            ).apply {
-                replaceRecommendedActions(result.recommendedActions)
-                replaceAnswers(
-                    mapOf(
-                        "q1" to "2",
-                        "q2" to "2",
-                        "q3" to "1",
-                        "q4" to "1",
-                        "q5" to "1",
-                        "q6" to "1",
-                        "q7" to "1",
-                        "q8" to "1",
-                        "q9" to "0",
-                        "q10" to "1"
-                    )
-                )
-            }
-        )
-    }
-
     fun getQuestionnaire(): ScreeningQuestionnaireResponse =
         ScreeningQuestionnaireResponse(
             version = "2026-04-ko-mvp",
@@ -208,7 +161,7 @@ class ScreeningService(
         )
 
     @Transactional
-    fun submit(request: ScreeningSubmissionRequest): ScreeningResultResponse {
+    fun submit(userId: String, request: ScreeningSubmissionRequest): ScreeningResultResponse {
         val score = request.answers.values.sumOf { it.toIntOrNull() ?: 0 }
         val withdrawalScore = request.answers["q9"]?.toIntOrNull() ?: 0
         val hopeScore = request.answers["q10"]?.toIntOrNull() ?: 0
@@ -233,6 +186,7 @@ class ScreeningService(
 
         screeningSessionRepository.save(
             ScreeningSessionEntity(
+                user = userService.requireEntity(userId),
                 completedDate = Time.today(),
                 publicSummary = result.publicSummary,
                 publicComfortMessage = result.publicComfortMessage,
@@ -250,12 +204,12 @@ class ScreeningService(
     }
 
     @Transactional(readOnly = true)
-    fun getLatestResult(): ScreeningResultResponse? =
-        screeningSessionRepository.findTopByOrderByCompletedDateDescIdDesc()?.toResponse()
+    fun getLatestResult(userId: String): ScreeningResultResponse? =
+        screeningSessionRepository.findTopByUserIdOrderByCompletedDateDescIdDesc(userId)?.toResponse()
 
     @Transactional(readOnly = true)
-    fun getHistory(): List<ScreeningHistoryItemResponse> =
-        screeningSessionRepository.findAllByOrderByCompletedDateDescIdDesc(PageRequest.of(0, 20)).map {
+    fun getHistory(userId: String): List<ScreeningHistoryItemResponse> =
+        screeningSessionRepository.findAllByUserIdOrderByCompletedDateDescIdDesc(userId, PageRequest.of(0, 20)).map {
             ScreeningHistoryItemResponse(
                 completedDate = it.completedDate,
                 publicSummary = it.publicSummary,

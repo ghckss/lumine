@@ -33,7 +33,10 @@ class AuthSecurityIntegrationTests(
             jsonPath("$.data.displayName") { value("하린") }
         }
 
-        val tamperedToken = login.accessToken.dropLast(1) + if (login.accessToken.last() == 'a') "b" else "a"
+        val tokenParts = login.accessToken.split('.')
+        val signature = tokenParts[2]
+        val tamperedSignature = (if (signature.first() == 'a') "b" else "a") + signature.drop(1)
+        val tamperedToken = "${tokenParts[0]}.${tokenParts[1]}.$tamperedSignature"
         mockMvc.get("/api/users/me") {
             header("Authorization", "Bearer $tamperedToken")
         }.andExpect { status { isUnauthorized() } }

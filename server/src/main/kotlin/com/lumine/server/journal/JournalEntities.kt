@@ -1,5 +1,6 @@
 package com.lumine.server.journal
 
+import com.lumine.server.user.UserEntity
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -12,16 +13,25 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OrderBy
 import jakarta.persistence.Table
+import jakarta.persistence.UniqueConstraint
 import java.time.LocalDate
 import java.time.OffsetDateTime
 
 @Entity
-@Table(name = "journal_entries")
+@Table(
+    name = "journal_entries",
+    uniqueConstraints = [
+        UniqueConstraint(name = "uk_journal_user_date", columnNames = ["user_id", "entry_date"])
+    ]
+)
 class JournalEntryEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
-    @Column(name = "entry_date", nullable = false, unique = true)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    var user: UserEntity?,
+    @Column(name = "entry_date", nullable = false)
     var entryDate: LocalDate,
     @Column(nullable = false, columnDefinition = "text")
     var body: String,

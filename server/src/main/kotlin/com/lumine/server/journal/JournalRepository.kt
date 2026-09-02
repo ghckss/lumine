@@ -8,11 +8,11 @@ import java.time.LocalDate
 
 interface JournalEntryRepository : JpaRepository<JournalEntryEntity, Long> {
     @EntityGraph(attributePaths = ["emotions"])
-    fun findByEntryDate(entryDate: LocalDate): JournalEntryEntity?
+    fun findByUserIdAndEntryDate(userId: String, entryDate: LocalDate): JournalEntryEntity?
 
-    @Query("select entry.id from JournalEntryEntity entry order by entry.entryDate desc, entry.createdAt desc")
-    fun findRecentIds(pageable: Pageable): List<Long>
+    @Query("select entry.id from JournalEntryEntity entry where entry.user.id = :userId order by entry.entryDate desc, entry.createdAt desc")
+    fun findRecentIds(userId: String, pageable: Pageable): List<Long>
 
     @EntityGraph(attributePaths = ["emotions"])
-    fun findAllByIdIn(ids: Collection<Long>): List<JournalEntryEntity>
+    fun findAllByIdInAndUserId(ids: Collection<Long>, userId: String): List<JournalEntryEntity>
 }
