@@ -9,4 +9,6 @@ interface ScreeningSessionRepository : JpaRepository<ScreeningSessionEntity, Lon
 
     @EntityGraph(attributePaths = ["recommendedActions"])
     fun findTopByUserIdOrderByCompletedDateDescIdDesc(userId: String): ScreeningSessionEntity?
+
+    fun findAllByUserIdOrderByCompletedDateDescIdDesc(userId: String): List<ScreeningSessionEntity>
 }

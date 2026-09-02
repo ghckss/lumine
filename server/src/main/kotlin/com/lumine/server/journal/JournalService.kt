@@ -21,6 +21,10 @@ class JournalService(
     fun getEntries(userId: String, limit: Int): List<JournalEntryResponse> =
         findRecentEntriesWithEmotions(userId, limit).map { it.toResponse() }
 
+    @Transactional(readOnly = true)
+    fun getAllEntries(userId: String): List<JournalEntryResponse> =
+        journalEntryRepository.findAllByUserIdOrderByEntryDateDescCreatedAtDesc(userId).map { it.toResponse() }
+
     @Transactional
     fun save(userId: String, request: JournalEntryRequest): JournalEntryResponse {
         val targetDate = request.date ?: Time.today()

@@ -51,6 +51,16 @@ data class ScreeningHistoryItemResponse(
     val requiresSafetyPrompt: Boolean
 )
 
+data class ScreeningExportResponse(
+    val completedDate: LocalDate,
+    val answers: Map<String, String>,
+    val publicSummary: String,
+    val publicComfortMessage: String,
+    val recommendedActions: List<String>,
+    val recommendedRescreenAt: LocalDate,
+    val requiresSafetyPrompt: Boolean
+)
+
 enum class ScreeningSubtype {
     MAJOR_DEPRESSION_TENDENCY,
     PERSISTENT_DEPRESSION_TENDENCY,

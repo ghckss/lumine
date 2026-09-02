@@ -15,4 +15,9 @@ interface JournalEntryRepository : JpaRepository<JournalEntryEntity, Long> {
 
     @EntityGraph(attributePaths = ["emotions"])
     fun findAllByIdInAndUserId(ids: Collection<Long>, userId: String): List<JournalEntryEntity>
+
+    @EntityGraph(attributePaths = ["emotions"])
+    fun findAllByUserIdOrderByEntryDateDescCreatedAtDesc(userId: String): List<JournalEntryEntity>
+
+    fun findAllByUserId(userId: String): List<JournalEntryEntity>
 }

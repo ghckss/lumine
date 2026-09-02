@@ -5,6 +5,7 @@ import com.lumine.server.global.api.ApiResponse
 import jakarta.validation.Valid
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -13,12 +14,23 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api/users")
 class UserController(
-    private val userService: UserService
+    private val userService: UserService,
+    private val userDataService: UserDataService
 ) {
     @GetMapping("/me")
     fun getMe(
         @AuthenticationPrincipal principal: AuthenticatedUser
     ): ApiResponse<UserMeResponse> = ApiResponse(userService.getCurrentUser(principal.userId))
+
+    @GetMapping("/me/export")
+    fun exportMyData(
+        @AuthenticationPrincipal principal: AuthenticatedUser
+    ): ApiResponse<UserDataExportResponse> = ApiResponse(userDataService.export(principal.userId))
+
+    @DeleteMapping("/me")
+    fun deleteMe(
+        @AuthenticationPrincipal principal: AuthenticatedUser
+    ): ApiResponse<DeleteUserResponse> = ApiResponse(userDataService.delete(principal.userId))
 
     @PostMapping("/profile")
     fun upsertProfile(

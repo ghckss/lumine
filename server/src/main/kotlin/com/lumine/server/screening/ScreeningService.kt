@@ -218,6 +218,20 @@ class ScreeningService(
             )
         }
 
+    @Transactional(readOnly = true)
+    fun getAllExportRecords(userId: String): List<ScreeningExportResponse> =
+        screeningSessionRepository.findAllByUserIdOrderByCompletedDateDescIdDesc(userId).map { session ->
+            ScreeningExportResponse(
+                completedDate = session.completedDate,
+                answers = session.answers.associate { it.questionId to it.answerValue },
+                publicSummary = session.publicSummary,
+                publicComfortMessage = session.publicComfortMessage,
+                recommendedActions = session.recommendedActions.map { it.action },
+                recommendedRescreenAt = session.recommendedRescreenAt,
+                requiresSafetyPrompt = session.requiresSafetyPrompt
+            )
+        }
+
     private fun ScreeningSessionEntity.toResponse(): ScreeningResultResponse =
         ScreeningResultResponse(
             publicSummary = publicSummary,
