@@ -15,7 +15,7 @@ class AuthService(
 ) {
     fun login(provider: AuthProvider, request: NativeLoginExchangeRequest? = null): LoginResponse {
         val verifiedUser = when {
-            authProperties.mockLoginEnabled && request.isMockLoginRequest(provider) -> mockVerifiedUser(provider)
+            authProperties.mockLoginEnabled && request.isMockLoginRequest(provider) -> mockVerifiedUser(provider, request)
             request != null -> providerTokenVerifier.verify(provider, request)
             else -> throw ResponseStatusException(
                 HttpStatus.UNAUTHORIZED,
@@ -64,10 +64,14 @@ class AuthService(
             idToken == "mock-$expectedProvider-native-id-token"
     }
 
-    private fun mockVerifiedUser(provider: AuthProvider): VerifiedProviderUser =
+    private fun mockVerifiedUser(
+        provider: AuthProvider,
+        request: NativeLoginExchangeRequest?
+    ): VerifiedProviderUser =
         VerifiedProviderUser(
-            providerUserId = if (provider == AuthProvider.KAKAO) "mock-kakao-native-user" else "mock-google-native-user",
-            displayName = provider.defaultDisplayName()
+            providerUserId = request?.providerUserId
+                ?: if (provider == AuthProvider.KAKAO) "mock-kakao-native-user" else "mock-google-native-user",
+            displayName = request?.displayName ?: provider.defaultDisplayName()
         )
 
     private fun AuthProvider.defaultDisplayName(): String =

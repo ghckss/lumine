@@ -6,12 +6,14 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
+import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 
 @SpringBootTest(properties = ["auth.mock-login-enabled=true"])
 @AutoConfigureMockMvc
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 class UserContentIsolationIntegrationTests(
     @Autowired private val mockMvc: MockMvc,
     @Autowired private val objectMapper: ObjectMapper
@@ -96,6 +98,7 @@ class UserContentIsolationIntegrationTests(
     private fun login(provider: String): String {
         val response = mockMvc.post("/api/auth/login/$provider") {
             contentType = MediaType.APPLICATION_JSON
+            content = """{"providerUserId":"mock-$provider-content-isolation"}"""
         }.andExpect { status { isOk() } }
             .andReturn().response.contentAsString
         return objectMapper.readTree(response).path("data").path("accessToken").asText()
