@@ -35,6 +35,7 @@
 - Chunk 2: Spring Boot 11개 테스트 통과, `git diff --check` 통과.
 - Chunk 3: Spring Boot 12개 테스트 통과, 앱 `pnpm exec tsc --noEmit` 통과, `git diff --check` 통과.
 - Chunk 4: Spring Boot 13개 테스트, 앱 Vitest 3개 테스트, TypeScript 검사, Android `assembleDebug` 통과. iOS Pod에 RNFS/RNShare 연결 완료.
+- Chunk 5: 서버 13개 테스트, 앱 Vitest 3개 테스트, TypeScript 검사, Android `assembleDebug`, iOS Simulator Debug 전체·증분 빌드, `git diff --check` 통과.
 
 ## Decision Records
 
@@ -45,6 +46,8 @@
 - 2026-09-03: 앱의 기존 순수 RN 마이그레이션 변경과 겹치는 파일은 수정하되 사용자 변경 전체를 임의 커밋하지 않음.
 - 2026-09-03: 계정 탈퇴는 Lumine 서버 데이터와 해당 계정 로컬 캐시만 삭제하고 소셜 제공자 계정 및 게스트 큐는 유지.
 - 2026-09-03: 내보내기는 앱 문서 디렉터리에 UTF-8 JSON 파일을 생성한 뒤 시스템 공유 시트로 전달.
+- 2026-09-03: `self_authored_prompt` — 최종 계약 대조에서 동기화 모달이 안전 도움 접근을 가릴 수 있음을 발견. 범위 내 개선으로 안전 도움 바로가기와 비차단 상태 전이를 추가.
+- 2026-09-03: 최종 검증 결과 모든 승인된 수용 기준 충족. 추가 개선 루프 없이 완료 결정.
 
 ## Known Constraints
 
@@ -56,26 +59,44 @@
 
 - PostgreSQL 마이그레이션은 실제 외부 PostgreSQL 인스턴스가 없어 H2 기반 통합 테스트와 SQL 구조 검토까지만 수행했다.
 - 동일한 게스트 항목을 동시에 여러 요청으로 가져오는 극단적 경쟁에서는 한 요청이 일시 실패할 수 있으나 재시도 시 멱등 복구된다.
-- iOS Pod 연결은 완료했으나 전체 Xcode 빌드는 최종 검증 단계에서 수행 예정이다.
+- 실제 기기의 OS 공유 시트에서 JSON 저장 동작은 시뮬레이터 빌드 이후 별도 수동 확인이 필요하다.
 
 ## Current Codebase Snapshot
 
-- HEAD: `7d70cce` (`dev`).
-- 서버: 영속 사용자/JWT, 사용자별 일기·마음 확인 격리 구현 완료.
-- Chunk 4 작업: 서버 내보내기/삭제와 앱 데이터 관리 UI 구현 및 검증 완료, 서버 커밋 전.
+- HEAD: `967966a` (`dev`).
+- 서버: 영속 사용자/JWT, 사용자별 콘텐츠 격리, 게스트 가져오기, 내보내기, 계정 삭제 구현 완료.
+- 앱: 동의 기반 동기화, 상태·재시도, 계정별 캐시, JSON 파일 내보내기, 탈퇴 UI 구현 및 양 플랫폼 빌드 검증 완료.
 - 사용자 소유 dirty worktree는 그대로 유지 중.
 
 ## Remaining Known Issues
 
 - Chunk 3~4 앱 변경은 기존 사용자 RN 마이그레이션과 분리 불가능하여 commit blocker 상태다.
+- 실제 PostgreSQL에서 Flyway V2/V3 실행과 실제 기기 파일 공유는 출시 전 수동 점검이 필요하다.
 
 ## Chunk Commit History
 
 - `fb3ece6` — Chunk 1: 사용자 영속성/JWT 인증. 서버 테스트 통과. 필수 리뷰 이슈 없음.
 - `8acbe1b` — Chunk 2: 사용자별 콘텐츠 격리/Flyway 마이그레이션. 서버 11개 테스트 통과. 필수 리뷰 이슈 없음.
 - `7d70cce` — Chunk 3 서버: 멱등 게스트 콘텐츠 가져오기/부분 실패. 서버 12개 테스트와 앱 타입 검사 통과. 앱 변경은 commit blocker.
+- `967966a` — Chunk 4 서버: 계정별 JSON 내보내기와 전체 데이터 삭제. 서버 13개 테스트, 앱 테스트·양 플랫폼 빌드 통과. 앱 변경은 commit blocker.
 
 ## Follow-up Candidates
 
 - 로그인 동시 생성 경쟁 시 unique constraint 충돌을 기존 사용자 재조회로 복구하는 보강.
 - 실제 PostgreSQL 환경에서 Flyway V2/V3 smoke test 자동화.
+
+## Final Validation Result
+
+- PASS — 모든 개인 API가 JWT principal을 사용하며 계정별 콘텐츠 격리 테스트를 통과했다.
+- PASS — 게스트 기록은 동의 전 자동 전송되지 않고 항목별 멱등·부분 실패·충돌 보존을 지원한다.
+- PASS — 동기화 진행·완료·실패 상태와 메뉴 재시도, 모든 상태의 안전 도움 접근을 제공한다.
+- PASS — 탈퇴 시 해당 사용자의 일기·마음 확인·import receipt·계정을 삭제하고 소셜 계정과 게스트 큐는 유지한다.
+- PASS — 본인 데이터만 UTF-8 JSON으로 직렬화해 파일 공유할 수 있다.
+- PASS — 구조 검토에서 새 순환 의존성, 중복 구현, 작업으로 발생한 dead code를 발견하지 못했다.
+
+## Review Summary
+
+- 인증/권한: 필수 이슈 없음.
+- 데이터 무결성/삭제: 필수 이슈 없음.
+- 동기화/재시도: 최종 개선 1건(안전 도움 접근) 반영 후 필수 이슈 없음.
+- 모바일 네이티브 연결: Android 및 iOS 빌드 성공. 서드파티 deprecated API 경고만 존재.
