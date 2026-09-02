@@ -1,0 +1,3 @@
+allowBuilds:
+  dooboolab-welcome: false
+  esbuild: true

@@ -2,6 +2,13 @@ import { getSecureValue, removeSecureValue, setSecureValue } from "./secure-stor
 
 const CACHE_PREFIX = "lumine.device.cache:";
 
+export function contentCacheKeys(owner: string) {
+  return [
+    `native.journal.records.${owner}`,
+    `native.screening.results.${owner}`
+  ];
+}
+
 function toCacheKey(key: string) {
   return `${CACHE_PREFIX}${key}`;
 }

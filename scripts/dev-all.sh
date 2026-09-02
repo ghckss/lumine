@@ -42,11 +42,9 @@ wait_for_http() {
 }
 
 run_bg server /bin/zsh -lc "cd '$ROOT_DIR' && ./scripts/run-server-dev.sh"
-run_bg web /bin/zsh -lc "cd '$ROOT_DIR/web' && npm run dev"
 run_bg metro /bin/zsh -lc "cd '$ROOT_DIR/app' && pnpm start"
 
 wait_for_http server "http://127.0.0.1:8080/api/screening/questionnaire"
-wait_for_http web "http://127.0.0.1:3005"
 sleep 3
 
 echo "[lumine] launching ios"

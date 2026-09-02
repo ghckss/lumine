@@ -2,17 +2,16 @@
   "name": "lumine-workspace",
   "private": true,
   "scripts": {
-    "dev:web": "cd web && npm run dev",
     "dev:server": "./scripts/run-server-dev.sh",
     "dev:metro": "cd app && pnpm start",
     "dev:ios": "cd app && pnpm ios:no-packager",
     "dev:android": "cd app && pnpm android:no-packager",
     "dev:all": "./scripts/dev-all.sh",
-    "deploy:web": "./scripts/deploy-web.sh",
     "deploy:server": "./scripts/deploy-server.sh",
     "deploy:all": "./scripts/deploy-all.sh",
     "artifact:android": "cd app/android && ./gradlew bundleRelease",
     "artifact:ios": "cd app/ios && xcodebuild -workspace LumineNativeShell.xcworkspace -scheme LumineNativeShell -configuration Release -archivePath build/LumineNativeShell.xcarchive archive",
     "artifact:app": "./scripts/build-mobile-artifacts.sh"
-  }
+  },
+  "packageManager": "pnpm@11.11.0+sha512.4463f65fd80ed80d69bc1d4bf163ee94f605c7380fc318bb5b2ebe15f8cd12d49c51a4d59e951b401e764d3b6ca751cbf51bc50ed7001a6bcb4935e684c34882"
 }

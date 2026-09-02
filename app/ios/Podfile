@@ -25,7 +25,8 @@ target 'LumineNativeShell' do
   pod "RNGoogleSignin", :path => "../node_modules/@react-native-google-signin/google-signin"
   pod "kakao-login", :path => "../node_modules/@react-native-seoul/kakao-login"
   pod "RNKeychain", :path => "../node_modules/react-native-keychain"
-  pod "react-native-webview", :path => "../node_modules/react-native-webview"
+  pod "RNFS", :path => "../node_modules/react-native-fs"
+  pod "RNShare", :path => "../node_modules/react-native-share"
 
   target 'LumineNativeShellTests' do
     inherit! :complete
@@ -40,5 +41,15 @@ target 'LumineNativeShell' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+
+    # fmt 11 bundled with React Native 0.76 fails consteval checks with
+    # Apple Clang 17 (Xcode 26). Keep the rest of React Native on C++20.
+    installer.pods_project.targets.each do |target|
+      next unless target.name == "fmt"
+
+      target.build_configurations.each do |config|
+        config.build_settings["CLANG_CXX_LANGUAGE_STANDARD"] = "c++17"
+      end
+    end
   end
 end

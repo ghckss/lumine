@@ -2,94 +2,42 @@ import React, { useEffect, useState } from "react";
 import { SafeAreaView, StatusBar, StyleSheet } from "react-native";
 import { initializeNativeAuthProviders } from "./src/auth/providers";
 import { SessionProvider, useSession } from "./src/context/SessionContext";
+import { AppProvider } from "./src/context/AppContext";
 import { SplashScreen } from "./src/components/SplashScreen";
 import { WelcomeScreen } from "./src/screens/WelcomeScreen";
-import { NativeAuthScreen } from "./src/screens/NativeAuthScreen";
 import { ProfileSetupScreen } from "./src/screens/ProfileSetupScreen";
-import { WebViewContainer } from "./src/screens/WebViewContainer";
+import { AppNavigator } from "./src/screens/native/AppNavigator";
 import { tokens } from "./src/config/tokens";
+import { GuestMigrationDialog } from "./src/components/GuestMigrationDialog";
 
 export default function App() {
-  useEffect(() => {
-    void initializeNativeAuthProviders();
-  }, []);
-
-  return (
-    <SessionProvider>
-      <AppRoot />
-    </SessionProvider>
-  );
+  useEffect(() => { void initializeNativeAuthProviders(); }, []);
+  return <SessionProvider><AppRoot /></SessionProvider>;
 }
 
 function AppRoot() {
-  const [isSplashVisible, setIsSplashVisible] = useState(true);
-  const [hasSeenWelcome, setHasSeenWelcome] = useState(false);
-  const [isGuestMode, setIsGuestMode] = useState(false);
-  const { isRestoring, session, profile, logout } = useSession();
+  const { isRestoring, session, profile, login } = useSession();
+  const [showSplash, setShowSplash] = useState(true);
+  const [guest, setGuest] = useState(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsSplashVisible(false);
-    }, 900);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (isSplashVisible || isRestoring) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor={tokens.background} />
-        <SplashScreen />
-      </SafeAreaView>
-    );
-  }
-
-  const isProfileComplete = Boolean(profile?.gender && profile?.birthDate && profile.agreedToTerms);
-
-  if (!session) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor={tokens.background} />
-        {isGuestMode ? (
-          <WebViewContainer
-            session={null}
-            onLogout={logout}
-          />
-        ) : hasSeenWelcome ? (
-          <NativeAuthScreen onBack={() => setHasSeenWelcome(false)} />
-        ) : (
-          <WelcomeScreen
-            onStart={() => setHasSeenWelcome(true)}
-            onExistingAccount={() => setHasSeenWelcome(true)}
-            onGuest={() => {
-              setIsGuestMode(true);
-            }}
-          />
-        )}
-      </SafeAreaView>
-    );
-  }
-
-  if (!isProfileComplete) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor={tokens.background} />
-        <ProfileSetupScreen />
-      </SafeAreaView>
-    );
-  }
+  useEffect(() => { const timer = setTimeout(() => setShowSplash(false), 1500); return () => clearTimeout(timer); }, []);
+  const profileComplete = Boolean(profile?.gender && profile?.birthDate && profile.agreedToTerms);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor={tokens.background} />
-      <WebViewContainer session={session} onLogout={logout} />
+      {showSplash || isRestoring ? <SplashScreen /> : !session && !guest ? (
+        <WelcomeScreen onLogin={login} onGuest={() => setGuest(true)} />
+      ) : session && !profileComplete ? (
+        <ProfileSetupScreen />
+      ) : (
+        <AppProvider key={session?.userId ?? "guest"} isGuest={guest && !session}>
+          <AppNavigator onRequestLogin={() => setGuest(false)} />
+          {session ? <GuestMigrationDialog /> : null}
+        </AppProvider>
+      )}
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: tokens.background
-  }
-});
+const styles = StyleSheet.create({ safeArea: { flex: 1, backgroundColor: tokens.background } });

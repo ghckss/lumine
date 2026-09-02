@@ -24,7 +24,6 @@ data class JournalEntryRequest(
     @field:NotEmpty
     @field:Size(min = 1, max = 3)
     val emotions: List<@NotBlank String>,
-    @field:NotBlank
     val body: String = ""
 )
 

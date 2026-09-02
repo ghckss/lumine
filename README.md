@@ -22,7 +22,6 @@ npm run dev:all
 ```
 
 개별 실행:
-- `npm run dev:web`
 - `npm run dev:server`
 - `npm run dev:metro`
 - `npm run dev:ios`
@@ -36,20 +35,18 @@ npm run dev:all
 - `npm run artifact:app`
 
 루트 기준 커맨드:
-- `npm run deploy:web`
 - `npm run deploy:server`
 - `npm run deploy:all`
 
 GitHub Actions:
 - `master` 브랜치 push 시 `.github/workflows/deploy.yml` 실행
-- 필요 변수: `AWS_REGION`, `AWS_ACCOUNT_ID`, `EKS_CLUSTER_NAME`, `ECR_WEB_REPOSITORY`, `ECR_SERVER_REPOSITORY`, `K8S_NAMESPACE_WEB`, `K8S_NAMESPACE_SERVER`, `WEB_HOST`, `API_HOST`, `NEXT_PUBLIC_API_BASE_URL`
+- 필요 변수: `AWS_REGION`, `AWS_ACCOUNT_ID`, `EKS_CLUSTER_NAME`, `ECR_SERVER_REPOSITORY`, `K8S_NAMESPACE_SERVER`, `API_HOST`
 - 필요 시크릿: `AWS_ROLE_ARN`
 
 ## Structure
 
 - `server/`: Spring Boot + Kotlin API 서버
-- `web/`: Next.js 기반 웹 앱
-- `app/`: React Native 셸
+- `app/`: 전체 사용자 경험을 제공하는 React Native 앱
 
 ## Notes
 

@@ -1,52 +1,10 @@
-import React from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { Animated, StyleSheet, Text, View } from "react-native";
 import { tokens } from "../config/tokens";
 
 export function SplashScreen() {
-  return (
-    <View style={styles.container}>
-      <View style={styles.badge}>
-        <Text style={styles.badgeText}>lumis eterne</Text>
-      </View>
-      <Text style={styles.title}>Lumine</Text>
-      <Text style={styles.subtitle}>당신의 영원한 빛</Text>
-      <ActivityIndicator color={tokens.primary} style={styles.loader} />
-    </View>
-  );
+  const opacity = useRef(new Animated.Value(0)).current;
+  useEffect(() => { Animated.timing(opacity, { toValue: 1, duration: 700, useNativeDriver: true }).start(); }, [opacity]);
+  return <View style={styles.page}><View style={styles.glow} /><Animated.View style={[styles.content, { opacity }]}><View style={styles.logoOuter}><View style={styles.logoMiddle}><View style={styles.logoCore}><View style={styles.logoLight} /></View></View></View><Text style={styles.brand}>Lumine</Text><Text style={styles.tagline}>마음의 빛을 찾아서</Text></Animated.View><View style={styles.dots}><View style={styles.dot} /><View style={[styles.dot, { opacity: 0.65 }]} /><View style={[styles.dot, { opacity: 0.35 }]} /></View></View>;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: tokens.background,
-    paddingHorizontal: 24
-  },
-  badge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: tokens.secondaryContainer
-  },
-  badgeText: {
-    color: tokens.secondary,
-    fontSize: 12,
-    fontWeight: "600",
-    letterSpacing: 0.4
-  },
-  title: {
-    marginTop: 24,
-    fontSize: 32,
-    fontWeight: "700",
-    color: tokens.text
-  },
-  subtitle: {
-    marginTop: 8,
-    fontSize: 15,
-    color: tokens.textMuted
-  },
-  loader: {
-    marginTop: 28
-  }
-});
+const styles = StyleSheet.create({ page: { flex: 1, backgroundColor: tokens.background, alignItems: "center", justifyContent: "center", overflow: "hidden" }, glow: { position: "absolute", width: 320, height: 320, borderRadius: 160, backgroundColor: tokens.primaryContainer, opacity: 0.24 }, content: { alignItems: "center" }, logoOuter: { width: 82, height: 82, borderRadius: 41, backgroundColor: tokens.primaryLight, alignItems: "center", justifyContent: "center" }, logoMiddle: { width: 56, height: 56, borderRadius: 28, backgroundColor: tokens.primaryContainer, alignItems: "center", justifyContent: "center" }, logoCore: { width: 33, height: 33, borderRadius: 17, backgroundColor: tokens.primary, alignItems: "center", justifyContent: "center" }, logoLight: { width: 11, height: 11, borderRadius: 6, backgroundColor: tokens.white }, brand: { fontFamily: "serif", color: tokens.primaryDark, fontSize: 38, fontWeight: "700", marginTop: 16, letterSpacing: 1 }, tagline: { color: tokens.textMuted, fontSize: 12, letterSpacing: 2, marginTop: 4 }, dots: { position: "absolute", bottom: 54, flexDirection: "row", gap: 7 }, dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: tokens.primary } });
