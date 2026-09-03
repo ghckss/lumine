@@ -22,6 +22,9 @@ export type JournalRecord = {
   body: string;
   comfortMessage: string;
   createdAt: string;
+  version: number;
+  syncStatus: "synced" | "local" | "pending" | "failed" | "conflict";
+  syncMessage?: string;
 };
 
 export type ScreeningResult = {

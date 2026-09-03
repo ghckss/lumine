@@ -11,6 +11,7 @@ export type JournalEntryPayload = {
   date: string;
   emotions: string[];
   body: string;
+  expectedVersion?: number;
 };
 
 export type ScreeningPayload = {
@@ -45,6 +46,17 @@ export type UserDataExport = {
   }>;
 };
 
+export class ApiError extends Error {
+  constructor(public readonly status: number) {
+    super(`Request failed: ${status}`);
+    this.name = "ApiError";
+  }
+}
+
+export function isRetryableApiError(error: unknown) {
+  return !(error instanceof ApiError) || error.status >= 500;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
@@ -56,7 +68,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
+    throw new ApiError(response.status);
   }
 
   const payload = (await response.json()) as ApiEnvelope<T>;
@@ -104,6 +116,10 @@ export const api = {
       body: JSON.stringify(payload)
     });
   },
+  deleteJournalEntry(date: string, expectedVersion: number) {
+    const query = new URLSearchParams({ date, expectedVersion: String(expectedVersion) });
+    return request<{ deleted: boolean }>(`/api/journal/entries?${query.toString()}`, { method: "DELETE" });
+  },
   submitScreening(payload: ScreeningPayload) {
     return request<Omit<ScreeningResult, "id" | "completedDate">>("/api/screening/submissions", {
       method: "POST",
@@ -148,6 +164,7 @@ export type ServerJournalEntry = {
   body: string;
   comfortMessage: string;
   createdAt: string;
+  version: number;
 };
 
 export function toJournalRecord(entry: ServerJournalEntry): JournalRecord {
@@ -157,6 +174,8 @@ export function toJournalRecord(entry: ServerJournalEntry): JournalRecord {
     emotions: entry.emotions.map((emotion) => emotion.label),
     body: entry.body,
     comfortMessage: entry.comfortMessage,
-    createdAt: entry.createdAt
+    createdAt: entry.createdAt,
+    version: entry.version,
+    syncStatus: "synced"
   };
 }

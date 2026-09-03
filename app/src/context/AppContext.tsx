@@ -147,7 +147,9 @@ export function AppProvider({ children, isGuest }: { children: React.ReactNode; 
         id: `journal:${input.date}`,
         ...input,
         comfortMessage: generateComfort(input.emotions),
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        version: -1,
+        syncStatus: "local"
       };
       await enqueuePendingSync({ id: record.id, type: "journal", payload: input });
     }

@@ -5,7 +5,9 @@ const CACHE_PREFIX = "lumine.device.cache:";
 export function contentCacheKeys(owner: string) {
   return [
     `native.journal.records.${owner}`,
-    `native.screening.results.${owner}`
+    `native.screening.results.${owner}`,
+    `journal.drafts.${owner}`,
+    `journal.operations.${owner}`
   ];
 }
 

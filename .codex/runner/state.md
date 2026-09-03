@@ -31,7 +31,7 @@
 ### Active Status
 
 - stage: implementation
-- current_chunk: 1 accepted — 서버 조건부 저장 및 삭제
+- current_chunk: 2 accepted — 계정별 초안 및 작업 큐 기반
 - max_self_repair_attempts: 2
 - max_review_iterations: 2
 - max_refinement_iterations: 2
@@ -45,15 +45,18 @@
 ### Active Validation Logs
 
 - Chunk 1: Spring Boot 14개 테스트 및 `git diff --check -- server` 통과.
+- Chunk 2: 앱 Vitest 6개 테스트, TypeScript 검사, `git diff --check -- app` 통과.
 
 ### Active Review Reports
 
 - Chunk 1 정확성 검토: 충돌 확인 전 위로 문구 생성 호출과 동시 낙관적 잠금 예외의 500 변환을 발견해 409 변환으로 수정.
 - Chunk 1 보안·테스트·구조 검토: principal 기반 사용자 범위, 조건부 삭제, Flyway 기본값 확인. 추가 필수 이슈 없음.
+- Chunk 2 정확성·격리 검토: draft/operation 저장 키에 owner 포함, 날짜별 작업 병합과 삭제 overlay 확인. 필수 이슈 없음.
 
 ### Active Chunk Commit History
 
-- Chunk 1: commit pending — version 기반 조건부 저장/삭제, PostgreSQL V4, 통합 테스트.
+- `8e9ab67` — Chunk 1: version 기반 조건부 저장/삭제, PostgreSQL V4, 통합 테스트.
+- Chunk 2: commit pending — 계정별 draft/operation 저장소, sync metadata, API 오류 타입과 단위 테스트.
 
 ---
 
