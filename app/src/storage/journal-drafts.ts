@@ -1,15 +1,16 @@
-import { loadDeviceCache, removeDeviceCache, saveDeviceCache } from "./device-cache";
+import { journalDraftsCacheKey, loadDeviceCache, removeDeviceCache, saveDeviceCache } from "./device-cache";
 
 export type JournalDraft = {
   date: string;
   emotions: string[];
   customEmotions: string[];
+  customInput: string;
   body: string;
   updatedAt: string;
 };
 
 export function journalDraftsKey(owner: string) {
-  return `journal.drafts.${owner}`;
+  return journalDraftsCacheKey(owner);
 }
 
 async function loadDrafts(owner: string) {

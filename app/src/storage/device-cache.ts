@@ -6,9 +6,17 @@ export function contentCacheKeys(owner: string) {
   return [
     `native.journal.records.${owner}`,
     `native.screening.results.${owner}`,
-    `journal.drafts.${owner}`,
-    `journal.operations.${owner}`
+    journalDraftsCacheKey(owner),
+    journalOperationsCacheKey(owner)
   ];
+}
+
+export function journalDraftsCacheKey(owner: string) {
+  return `journal.drafts.${owner}`;
+}
+
+export function journalOperationsCacheKey(owner: string) {
+  return `journal.operations.${owner}`;
 }
 
 function toCacheKey(key: string) {

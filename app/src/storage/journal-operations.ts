@@ -1,5 +1,5 @@
 import type { JournalRecord } from "../types/content";
-import { loadDeviceCache, removeDeviceCache, saveDeviceCache } from "./device-cache";
+import { journalOperationsCacheKey, loadDeviceCache, removeDeviceCache, saveDeviceCache } from "./device-cache";
 
 export type JournalOperationStatus = "pending" | "failed" | "conflict";
 
@@ -10,13 +10,14 @@ export type JournalOperation = {
   record: JournalRecord;
   expectedVersion: number;
   status: JournalOperationStatus;
+  retryable: boolean;
   message?: string;
   notBefore?: string;
   attempts: number;
 };
 
 export function journalOperationsKey(owner: string) {
-  return `journal.operations.${owner}`;
+  return journalOperationsCacheKey(owner);
 }
 
 export async function loadJournalOperations(owner: string) {
@@ -35,12 +36,36 @@ export function upsertJournalOperation(operations: JournalOperation[], operation
   return [...operations.filter((item) => item.date !== operation.date), operation];
 }
 
+export function restoreJournalOperationsAfterUndo(operations: JournalOperation[], record: JournalRecord) {
+  const next = operations.filter((item) => item.kind !== "delete" || item.date !== record.date);
+  if (!["pending", "failed", "conflict"].includes(record.syncStatus)) return next;
+  return upsertJournalOperation(next, {
+    id: makeJournalOperationId("save", record.date),
+    kind: "save",
+    date: record.date,
+    record,
+    expectedVersion: record.version,
+    status: record.syncStatus as JournalOperationStatus,
+    retryable: record.syncStatus !== "conflict",
+    message: record.syncMessage,
+    attempts: 0
+  });
+}
+
 export function mergeJournalOperations(records: JournalRecord[], operations: JournalOperation[]) {
   const byDate = new Map<string, JournalRecord>(
     records.map((record) => [record.date, { ...record, syncStatus: "synced" }])
   );
   for (const operation of operations) {
     if (operation.kind === "delete") {
+      if (!operation.retryable && operation.status !== "pending") {
+        byDate.set(operation.date, {
+          ...operation.record,
+          syncStatus: operation.status,
+          syncMessage: operation.message
+        });
+        continue;
+      }
       byDate.delete(operation.date);
       continue;
     }

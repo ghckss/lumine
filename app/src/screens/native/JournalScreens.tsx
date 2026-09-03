@@ -4,6 +4,7 @@ import { tokens } from "../../config/tokens";
 import { useApp } from "../../context/AppContext";
 import { BottomTabs, Card, EmotionChip, Logo, Page, PageScroll, PrimaryButton, TopBar, typography } from "../../components/NativeUI";
 import { emotions, getEmotionColor } from "../../types/content";
+import { loadJournalDraft, removeJournalDraft, saveJournalDraft } from "../../storage/journal-drafts";
 
 function localIsoDay() {
   const date = new Date();
@@ -14,7 +15,7 @@ function localIsoDay() {
 }
 
 export function DiaryScreen() {
-  const { journalRecords, saveJournal, navigate } = useApp();
+  const { journalOwner, journalRecords, saveJournal, navigate } = useApp();
   const today = localIsoDay();
   const existing = journalRecords.find((record) => record.date === today);
   const [selected, setSelected] = useState(existing?.emotions ?? []);
@@ -23,13 +24,46 @@ export function DiaryScreen() {
   const [customEmotions, setCustomEmotions] = useState<string[]>(existing?.emotions.filter((emotion) => !emotions.includes(emotion)) ?? []);
   const [isSaving, setIsSaving] = useState(false);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [draftReady, setDraftReady] = useState(false);
 
   useEffect(() => {
-    setSelected(existing?.emotions ?? []);
-    setBody(existing?.body ?? "");
-    setCustom("");
-    setCustomEmotions(existing?.emotions.filter((emotion) => !emotions.includes(emotion)) ?? []);
-  }, [existing?.id]);
+    let active = true;
+    setDraftReady(false);
+    loadJournalDraft(journalOwner, today)
+      .catch(() => null)
+      .then((draft) => {
+        if (!active) return;
+        setSelected(draft?.emotions ?? existing?.emotions ?? []);
+        setBody(draft?.body ?? existing?.body ?? "");
+        setCustom(draft?.customInput ?? "");
+        setCustomEmotions(draft?.customEmotions ?? existing?.emotions.filter((emotion) => !emotions.includes(emotion)) ?? []);
+        setDraftReady(true);
+      });
+    return () => { active = false; };
+  }, [journalOwner, today]);
+
+  useEffect(() => {
+    if (!draftReady) return;
+    const timer = setTimeout(() => {
+      const unchanged = body === (existing?.body ?? "")
+        && custom === ""
+        && selected.join("\u0000") === (existing?.emotions ?? []).join("\u0000");
+      if (unchanged) {
+        void removeJournalDraft(journalOwner, today).catch(() => undefined);
+        return;
+      }
+      void saveJournalDraft(journalOwner, {
+        date: today,
+        emotions: selected,
+        customEmotions,
+        customInput: custom,
+        body,
+        updatedAt: new Date().toISOString()
+      }).catch(() => undefined);
+    }, 700);
+    return () => clearTimeout(timer);
+  }, [body, custom, customEmotions, draftReady, existing?.body, existing?.emotions, journalOwner, selected, today]);
 
   function toggle(emotion: string) {
     setSelected((current) => current.includes(emotion) ? current.filter((item) => item !== emotion) : current.length < 3 ? [...current, emotion] : current);
@@ -46,6 +80,7 @@ export function DiaryScreen() {
   async function submit() {
     if (selected.length === 0) return;
     setIsSaving(true);
+    setSaveError(null);
     try {
       const record = await saveJournal({ date: today, emotions: selected, body });
       setSavedMessage(record.comfortMessage);
@@ -53,6 +88,8 @@ export function DiaryScreen() {
         setSavedMessage(null);
         navigate("record-detail", { recordId: record.id, backToHome: true });
       }, 1800);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "저장하지 못했어요. 다시 시도해 주세요.");
     } finally {
       setIsSaving(false);
     }
@@ -85,6 +122,12 @@ export function DiaryScreen() {
         />
         <Text style={styles.counter}>{body.length}자</Text>
         {existing ? <View style={styles.notice}><Text style={styles.noticeText}>오늘의 기록이 이미 있어요. 저장하면 기존 기록이 갱신돼요.</Text></View> : null}
+        {saveError ? (
+          <View style={styles.errorNotice} accessibilityLiveRegion="polite">
+            <Text style={styles.errorText}>{saveError}</Text>
+            <Pressable accessibilityRole="button" onPress={() => void submit()}><Text style={styles.retryText}>다시 시도</Text></Pressable>
+          </View>
+        ) : null}
       </PageScroll>
       <View style={styles.bottomAction}><PrimaryButton label={isSaving ? "저장하는 중" : existing ? "수정 완료" : "저장하기"} disabled={selected.length === 0 || isSaving} onPress={() => void submit()} /></View>
 
@@ -133,6 +176,7 @@ export function RecordsScreen() {
               <Pressable key={record.id} onPress={() => navigate("record-detail", { recordId: record.id })} style={({ pressed }) => [styles.record, pressed && styles.pressed]}>
                 <View style={styles.dateSide}><Text style={typography.caption}>{new Date(record.date).toLocaleDateString("ko-KR", { weekday: "short" })}</Text><Text style={styles.dateNumber}>{new Date(record.date).getDate()}</Text><View style={[styles.dot, { backgroundColor: getEmotionColor(record.emotions[0]) }]} /></View>
                 <View style={styles.recordMain}><View style={styles.recordChips}>{record.emotions.map((emotion) => <EmotionChip key={emotion} emotion={emotion} />)}</View><Text style={styles.recordText} numberOfLines={2}>{record.body || "본문 없음"}</Text><Text style={typography.caption}>{new Date(record.date).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" })}</Text></View>
+                {record.syncStatus !== "synced" ? <Text style={styles.syncBadge}>{syncLabel(record.syncStatus)}</Text> : null}
                 <Text style={styles.arrow}>›</Text>
               </Pressable>
             ))}
@@ -145,7 +189,8 @@ export function RecordsScreen() {
 }
 
 export function RecordDetailScreen() {
-  const { route, journalRecords, navigate, resetTo } = useApp();
+  const { route, journalRecords, navigate, resetTo, retryJournal, deleteJournal } = useApp();
+  const [actionError, setActionError] = useState<string | null>(null);
   const record = journalRecords.find((item) => item.id === route.params?.recordId);
   if (!record) return <Page><TopBar title="기록 상세" /><View style={styles.empty}><Text style={styles.emptyEmoji}>📭</Text><Text style={typography.muted}>기록을 찾을 수 없어요</Text></View></Page>;
 
@@ -158,7 +203,23 @@ export function RecordDetailScreen() {
         {record.body ? <Card style={styles.detailCard}><Text style={typography.body}>{record.body}</Text></Card> : null}
         <Text style={[typography.section, styles.comfortLabel]}>루민의 위로</Text>
         <View style={styles.comfortCard}><Logo size={34} /><Text style={styles.comfortText}>{record.comfortMessage}</Text></View>
+        {record.syncStatus !== "synced" ? (
+          <View style={styles.syncNotice} accessibilityLiveRegion="polite">
+            <Text style={styles.syncNoticeTitle}>{syncLabel(record.syncStatus)}</Text>
+            <Text style={typography.caption}>{record.syncMessage ?? "서버 동기화를 기다리고 있어요."}</Text>
+            {record.syncStatus !== "conflict" && record.syncStatus !== "local" ? (
+              <Pressable accessibilityRole="button" onPress={() => {
+                setActionError(null);
+                void retryJournal(record.date).catch((error) => setActionError(error instanceof Error ? error.message : "다시 시도하지 못했어요."));
+              }}><Text style={styles.retryText}>지금 다시 시도</Text></Pressable>
+            ) : null}
+          </View>
+        ) : null}
+        {actionError ? <Text style={styles.actionError}>{actionError}</Text> : null}
         {record.date === localIsoDay() ? <View style={styles.editButton}><PrimaryButton variant="outline" label="오늘 기록 수정하기" onPress={() => navigate("diary")} /></View> : null}
+        <View style={styles.deleteButton}><PrimaryButton variant="danger" label="기록 삭제" onPress={() => {
+          void deleteJournal(record).then(() => resetTo("records")).catch((error) => setActionError(error instanceof Error ? error.message : "삭제하지 못했어요."));
+        }} /></View>
       </PageScroll>
     </Page>
   );
@@ -176,6 +237,9 @@ const styles = StyleSheet.create({
   counter: { ...typography.caption, textAlign: "right", marginTop: 5 },
   notice: { backgroundColor: tokens.primaryLight, borderWidth: 1, borderColor: tokens.outline, padding: 12, borderRadius: 12, marginTop: 12 },
   noticeText: { ...typography.caption, color: tokens.primaryDark },
+  errorNotice: { backgroundColor: "#FFF1F1", borderWidth: 1, borderColor: tokens.danger, padding: 12, borderRadius: 12, marginTop: 12, gap: 6 },
+  errorText: { ...typography.caption, color: tokens.danger },
+  retryText: { color: tokens.primary, fontSize: 13, fontWeight: "700", paddingVertical: 3 },
   bottomAction: { paddingHorizontal: 20, paddingBottom: 12 },
   overlay: { flex: 1, backgroundColor: "rgba(82,62,114,0.96)", alignItems: "center", justifyContent: "center", paddingHorizontal: 34 },
   overlayMark: { width: 80, height: 80, borderRadius: 40, backgroundColor: "rgba(255,255,255,0.18)", alignItems: "center", justifyContent: "center" },
@@ -208,11 +272,23 @@ const styles = StyleSheet.create({
   recordChips: { flexDirection: "row", flexWrap: "wrap", gap: 4, marginBottom: 6 },
   recordText: { ...typography.body, color: tokens.textMuted, marginBottom: 5 },
   arrow: { alignSelf: "center", color: tokens.outline, fontSize: 25 },
+  syncBadge: { alignSelf: "flex-start", color: tokens.primaryDark, backgroundColor: tokens.primaryLight, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 4, fontSize: 10, fontWeight: "700" },
   detailChips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8, marginBottom: 20 },
   detailCard: { marginBottom: 22 },
   comfortLabel: { color: tokens.textMuted, marginBottom: 9 },
   comfortCard: { flexDirection: "row", gap: 12, alignItems: "flex-start", backgroundColor: tokens.primaryLight, borderWidth: 1, borderColor: tokens.outline, borderRadius: 18, padding: 17 },
   comfortText: { flex: 1, color: tokens.primaryDark, fontSize: 14, lineHeight: 22 },
   editButton: { marginTop: 24 },
+  deleteButton: { marginTop: 12, marginBottom: 20 },
+  syncNotice: { backgroundColor: tokens.primaryLight, borderRadius: 14, borderWidth: 1, borderColor: tokens.outline, padding: 13, marginTop: 16, gap: 4 },
+  syncNoticeTitle: { color: tokens.primaryDark, fontSize: 13, fontWeight: "700" },
+  actionError: { color: tokens.danger, fontSize: 12, marginTop: 8 },
   pressed: { opacity: 0.75, transform: [{ scale: 0.99 }] }
 });
+
+function syncLabel(status: "local" | "pending" | "failed" | "conflict") {
+  if (status === "local") return "기기에만 저장";
+  if (status === "pending") return "동기화 대기";
+  if (status === "conflict") return "변경 충돌";
+  return "동기화 실패";
+}

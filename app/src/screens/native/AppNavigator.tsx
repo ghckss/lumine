@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Animated, Dimensions, Easing, StyleSheet, View } from "react-native";
+import { Animated, Dimensions, Easing, Pressable, StyleSheet, Text, View } from "react-native";
 import { AppRouteScope, STACK_TRANSITION_MS, useApp } from "../../context/AppContext";
 import { tokens } from "../../config/tokens";
 import type { AppRoute } from "../../types/content";
@@ -9,7 +9,7 @@ import { CheckQuestionScreen, CheckResultScreen, CheckStartScreen } from "./Scre
 import { DataManagementScreen, LegalScreen, MenuScreen, SafetyHelpScreen } from "./SupportAndSettingsScreens";
 
 export function AppNavigator({ onRequestLogin }: { onRequestLogin: () => void }) {
-  const { stack, backTransitionKey } = useApp();
+  const { stack, backTransitionKey, pendingJournalDeletion, undoJournalDelete } = useApp();
   const visibleRoutes = stack.slice(-2);
   const isPageChange = stack.length === 1;
 
@@ -28,6 +28,14 @@ export function AppNavigator({ onRequestLogin }: { onRequestLogin: () => void })
           </NavigationLayer>
         );
       })}
+      {pendingJournalDeletion ? (
+        <View style={styles.undoBar} accessibilityLiveRegion="polite">
+          <Text style={styles.undoText}>기록을 삭제했어요.</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel="기록 삭제 취소" onPress={() => void undoJournalDelete()} style={styles.undoButton}>
+            <Text style={styles.undoAction}>실행 취소</Text>
+          </Pressable>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -98,5 +106,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.16,
     shadowRadius: 12,
     elevation: 12
-  }
+  },
+  undoBar: { position: "absolute", left: 16, right: 16, bottom: 16, zIndex: 30, elevation: 30, flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: tokens.primaryDark, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 13 },
+  undoText: { color: tokens.white, fontSize: 13 },
+  undoButton: { minWidth: 72, minHeight: 44, alignItems: "center", justifyContent: "center" },
+  undoAction: { color: tokens.white, fontSize: 13, fontWeight: "800", padding: 4 }
 });

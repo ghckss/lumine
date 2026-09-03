@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { JournalRecord } from "../types/content";
-import { mergeJournalOperations, upsertJournalOperation, type JournalOperation } from "./journal-operations";
+import { mergeJournalOperations, restoreJournalOperationsAfterUndo, upsertJournalOperation, type JournalOperation } from "./journal-operations";
 
 const record: JournalRecord = {
   id: "journal:2026-09-03",
@@ -21,6 +21,7 @@ function operation(overrides: Partial<JournalOperation> = {}): JournalOperation 
     record,
     expectedVersion: 2,
     status: "pending",
+    retryable: true,
     attempts: 0,
     ...overrides
   };
@@ -47,5 +48,19 @@ describe("journal operations", () => {
       syncStatus: "conflict",
       syncMessage: "변경 충돌"
     });
+    expect(mergeJournalOperations([record], [operation({ kind: "delete", status: "conflict", retryable: false })])[0]).toMatchObject({
+      body: "기록",
+      syncStatus: "conflict"
+    });
+  });
+
+  it("restores the exact pending save when deletion is undone", () => {
+    const pendingRecord = { ...record, body: "아직 전송 전", syncStatus: "pending" as const };
+    const restored = restoreJournalOperationsAfterUndo(
+      [operation({ id: "delete", kind: "delete", record: pendingRecord })],
+      pendingRecord
+    );
+    expect(restored).toHaveLength(1);
+    expect(restored[0]).toMatchObject({ kind: "save", record: pendingRecord, expectedVersion: 2 });
   });
 });

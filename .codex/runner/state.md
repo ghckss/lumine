@@ -27,11 +27,13 @@
 - 2026-09-03: 원격 삭제는 5초 유예가 끝난 뒤 실행한다. 유예 중에는 영속 작업의 스냅샷으로 정확히 복원한다.
 - 2026-09-03: 인증 사용자 작업 큐는 기존 게스트 계정 이전 큐와 분리하고 owner key를 저장 키에 포함한다.
 - 2026-09-03: 새 앱은 일기 version을 항상 보내 충돌을 탐지하고, 기존 클라이언트의 version 생략 저장은 호환을 위해 유지한다.
+- 2026-09-03: 앱 UI와 자동 재전송은 동일한 AppProvider 상태·큐 경계를 공유하므로 청크 3·4를 하나의 검증/커밋 경계로 합쳤다. 승인된 구조와 범위 변경은 없다.
+- 2026-09-03: 큐 쓰기와 동기화 실행을 직렬화하고, 계정 전환 시 이전 계정 상태를 즉시 비워 교차 계정 노출과 작업 유실을 방지한다.
 
 ### Active Status
 
 - stage: implementation
-- current_chunk: 2 accepted — 계정별 초안 및 작업 큐 기반
+- current_chunk: 3-4 accepted — 작성 UI, 삭제 취소, 자동 재동기화
 - max_self_repair_attempts: 2
 - max_review_iterations: 2
 - max_refinement_iterations: 2
@@ -46,17 +48,22 @@
 
 - Chunk 1: Spring Boot 14개 테스트 및 `git diff --check -- server` 통과.
 - Chunk 2: 앱 Vitest 6개 테스트, TypeScript 검사, `git diff --check -- app` 통과.
+- Chunk 3-4: 앱 Vitest 9개 테스트, TypeScript 검사, Android `assembleDebug`, iOS Simulator Debug 전체·증분 빌드, Pod 설치 및 `git diff --check` 통과.
 
 ### Active Review Reports
 
 - Chunk 1 정확성 검토: 충돌 확인 전 위로 문구 생성 호출과 동시 낙관적 잠금 예외의 500 변환을 발견해 409 변환으로 수정.
 - Chunk 1 보안·테스트·구조 검토: principal 기반 사용자 범위, 조건부 삭제, Flyway 기본값 확인. 추가 필수 이슈 없음.
 - Chunk 2 정확성·격리 검토: draft/operation 저장 키에 owner 포함, 날짜별 작업 병합과 삭제 overlay 확인. 필수 이슈 없음.
+- Chunk 3-4 정확성 검토: 동기화와 신규 큐 쓰기 경쟁, 성공 후 초안 정리 실패의 중복 저장 위험, 만료된 게스트 삭제 재개 문제를 수정.
+- Chunk 3-4 보안·타입·접근성·유지보수 검토: owner 전환 초기화, 44pt 실행 취소 터치 영역, 키 생성 단일화 반영. 추가 필수 이슈 없음.
 
 ### Active Chunk Commit History
 
 - `8e9ab67` — Chunk 1: version 기반 조건부 저장/삭제, PostgreSQL V4, 통합 테스트.
 - Chunk 2: commit pending — 계정별 draft/operation 저장소, sync metadata, API 오류 타입과 단위 테스트.
+- `c596930` — Chunk 2: 계정별 draft/operation 저장소, sync metadata, API 오류 타입과 단위 테스트.
+- Chunk 3-4: commit pending — 700ms 초안, 오류/재시도 UI, 상태 표시, 5초 삭제 취소, NetInfo/AppState 재전송과 네이티브 연결.
 
 ---
 

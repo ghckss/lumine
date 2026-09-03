@@ -48,3 +48,8 @@ export async function enqueuePendingSync(item: PendingSyncItem) {
   const withoutDuplicate = queue.filter((queued) => queued.id !== item.id);
   await savePendingSyncQueue([...withoutDuplicate, { ...item, status: "pending", message: undefined }]);
 }
+
+export async function removePendingJournal(date: string) {
+  const queue = await loadPendingSyncQueue();
+  await savePendingSyncQueue(queue.filter((item) => item.type !== "journal" || item.payload.date !== date));
+}

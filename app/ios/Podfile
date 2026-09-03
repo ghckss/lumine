@@ -27,6 +27,7 @@ target 'LumineNativeShell' do
   pod "RNKeychain", :path => "../node_modules/react-native-keychain"
   pod "RNFS", :path => "../node_modules/react-native-fs"
   pod "RNShare", :path => "../node_modules/react-native-share"
+  pod "react-native-netinfo", :path => "../node_modules/@react-native-community/netinfo"
 
   target 'LumineNativeShellTests' do
     inherit! :complete
