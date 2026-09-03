@@ -69,7 +69,7 @@
 
 ### Active Current Codebase Snapshot
 
-- HEAD: `a0d8fda` on `dev`; 작업 시작점은 `499670c`.
+- 구현 HEAD: `a0d8fda`; 이후 최종 검증 State Store 커밋이 추가됨. 작업 시작점은 `499670c`, 브랜치는 `dev`.
 - 서버: 사용자 범위 일기 저장/삭제, JPA version 충돌 탐지, PostgreSQL V4 마이그레이션.
 - 앱: owner-scoped 초안·작업 큐, 실패 보존/수동 재시도, pending/failed/conflict/local 표시, 5초 삭제 취소, 연결 복구·앱 활성화 재전송.
 - 작업 트리: clean.
