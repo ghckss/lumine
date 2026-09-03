@@ -14,6 +14,7 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.OrderBy
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
+import jakarta.persistence.Version
 import java.time.LocalDate
 import java.time.OffsetDateTime
 
@@ -39,6 +40,9 @@ class JournalEntryEntity(
     var comfortMessage: String,
     @Column(name = "created_at", nullable = false)
     var createdAt: OffsetDateTime,
+    @Version
+    @Column(nullable = false)
+    var version: Long = 0,
     @OneToMany(mappedBy = "entry", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("sortOrder asc, id asc")
     val emotions: MutableList<JournalEmotionEntity> = mutableListOf()

@@ -8,6 +8,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 
@@ -74,6 +75,49 @@ class UserContentIsolationIntegrationTests(
             contentType = MediaType.APPLICATION_JSON
             content = """{"answers":{"q1":"0"}}"""
         }.andExpect { status { isUnauthorized() } }
+    }
+
+    @Test
+    fun `journal writes and deletes reject stale versions`() {
+        val token = login("google")
+        val createResponse = mockMvc.post("/api/journal/entries") {
+            bearer(token)
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"date":"2026-09-04","emotions":["평온"],"body":"처음","expectedVersion":-1}"""
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data.version") { isNumber() }
+        }.andReturn().response.contentAsString
+        val version = objectMapper.readTree(createResponse).path("data").path("version").asLong()
+
+        mockMvc.post("/api/journal/entries") {
+            bearer(token)
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"date":"2026-09-04","emotions":["불안"],"body":"충돌","expectedVersion":${version - 1}}"""
+        }.andExpect { status { isConflict() } }
+
+        val updateResponse = mockMvc.post("/api/journal/entries") {
+            bearer(token)
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"date":"2026-09-04","emotions":["평온"],"body":"수정","expectedVersion":$version}"""
+        }.andExpect { status { isOk() } }
+            .andReturn().response.contentAsString
+        val updatedVersion = objectMapper.readTree(updateResponse).path("data").path("version").asLong()
+
+        mockMvc.delete("/api/journal/entries") {
+            bearer(token)
+            param("date", "2026-09-04")
+            param("expectedVersion", version.toString())
+        }.andExpect { status { isConflict() } }
+
+        mockMvc.delete("/api/journal/entries") {
+            bearer(token)
+            param("date", "2026-09-04")
+            param("expectedVersion", updatedVersion.toString())
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data.deleted") { value(true) }
+        }
     }
 
     private fun saveJournal(token: String, date: String, body: String) {

@@ -5,6 +5,7 @@ import com.lumine.server.global.api.ApiResponse
 import jakarta.validation.Valid
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -35,4 +36,12 @@ class JournalController(
         @AuthenticationPrincipal principal: AuthenticatedUser,
         @Valid @RequestBody request: JournalEntryRequest
     ): ApiResponse<JournalEntryResponse> = ApiResponse(journalService.save(principal.userId, request))
+
+    @DeleteMapping
+    fun deleteEntry(
+        @AuthenticationPrincipal principal: AuthenticatedUser,
+        @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: LocalDate,
+        @RequestParam("expectedVersion") expectedVersion: Long
+    ): ApiResponse<DeleteJournalEntryResponse> =
+        ApiResponse(journalService.delete(principal.userId, date, expectedVersion))
 }

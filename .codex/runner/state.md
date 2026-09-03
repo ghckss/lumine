@@ -1,5 +1,64 @@
 # Runner State Store
 
+## Active Workflow — 2.2 작성 안정성
+
+### Requirement Contract
+
+- 사용자/게스트와 날짜별 일기 초안을 약 700ms 디바운스로 자동 저장하고 재진입·재실행 시 복원한다.
+- 저장 실패 시 감정과 본문을 유지하고 사용자가 재시도할 수 있게 한다.
+- 인증 사용자의 네트워크·5xx 실패 저장은 계정별 큐에 보존하고, 연결 복구 또는 앱 활성화 시 자동 재전송한다.
+- 목록과 상세 화면에서 동기화 대기·실패·충돌 기록을 구분한다.
+- 일기 삭제 후 5초 동안 실행 취소할 수 있으며 감정·본문·위로 문구를 정확히 복원한다.
+- 서버 데이터와 모든 로컬 초안·큐는 계정 간 완전히 분리한다.
+- 마음 확인 초안/삭제, 장기 휴지통, 백그라운드 푸시 동기화는 범위 밖이다.
+
+### Implementation Plan
+
+1. 서버 일기 버전 기반 조건부 저장과 사용자 범위 삭제 API.
+2. 날짜별 초안 저장소와 계정별 저장·삭제 작업 큐.
+3. 저장 실패·재시도·동기화 상태·5초 삭제 취소 UI.
+4. 네트워크 복구 및 앱 활성화 자동 동기화.
+5. 서버/앱 테스트, 타입 검사, Android/iOS 빌드, 구조 검토.
+
+### Active Decision Records
+
+- 2026-09-03: 작성 안정성 Gate 1 요구사항 계약 승인.
+- 2026-09-03: 작성 안정성 Gate 2 구현 계획 승인, Implementation Autopilot 시작.
+- 2026-09-03: 원격 삭제는 5초 유예가 끝난 뒤 실행한다. 유예 중에는 영속 작업의 스냅샷으로 정확히 복원한다.
+- 2026-09-03: 인증 사용자 작업 큐는 기존 게스트 계정 이전 큐와 분리하고 owner key를 저장 키에 포함한다.
+- 2026-09-03: 새 앱은 일기 version을 항상 보내 충돌을 탐지하고, 기존 클라이언트의 version 생략 저장은 호환을 위해 유지한다.
+
+### Active Status
+
+- stage: implementation
+- current_chunk: 1 accepted — 서버 조건부 저장 및 삭제
+- max_self_repair_attempts: 2
+- max_review_iterations: 2
+- max_refinement_iterations: 2
+
+### Active Known Constraints
+
+- 앱 순수 RN 마이그레이션과 `web/` 제거를 포함한 사용자 소유 dirty worktree가 존재한다.
+- 앱 변경 파일이 기존 사용자 변경과 겹치면 Runner 전용 커밋 대신 commit blocker를 기록한다.
+- `JournalModels.kt`의 기존 본문 검증 변경은 사용자 소유이므로 되돌리거나 별도 변경으로 취급하지 않는다.
+
+### Active Validation Logs
+
+- Chunk 1: Spring Boot 14개 테스트 및 `git diff --check -- server` 통과.
+
+### Active Review Reports
+
+- Chunk 1 정확성 검토: 충돌 확인 전 위로 문구 생성 호출과 동시 낙관적 잠금 예외의 500 변환을 발견해 409 변환으로 수정.
+- Chunk 1 보안·테스트·구조 검토: principal 기반 사용자 범위, 조건부 삭제, Flyway 기본값 확인. 추가 필수 이슈 없음.
+
+### Active Chunk Commit History
+
+- Chunk 1: commit pending — version 기반 조건부 저장/삭제, PostgreSQL V4, 통합 테스트.
+
+---
+
+## Previous Workflow — 2.1 계정별 데이터 관리
+
 ## Requirement Contract
 
 - JWT 인증 계정별로 서버 일기와 마음 확인 결과를 완전히 격리한다.

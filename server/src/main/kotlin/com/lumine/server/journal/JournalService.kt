@@ -3,8 +3,11 @@ package com.lumine.server.journal
 import com.lumine.server.common.Time
 import com.lumine.server.user.UserService
 import org.springframework.data.domain.PageRequest
+import org.springframework.dao.OptimisticLockingFailureException
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.server.ResponseStatusException
 import java.time.LocalDate
 
 @Service
@@ -28,6 +31,8 @@ class JournalService(
     @Transactional
     fun save(userId: String, request: JournalEntryRequest): JournalEntryResponse {
         val targetDate = request.date ?: Time.today()
+        val entity = journalEntryRepository.findByUserIdAndEntryDate(userId, targetDate)
+        verifyExpectedVersion(entity, request.expectedVersion)
         val recentEmotionSummary = getRecentEmotionSummary(userId)
 
         val comfortMessage = comfortMessageGenerator.generate(
@@ -39,8 +44,7 @@ class JournalService(
             )
         )
 
-        val entity = journalEntryRepository.findByUserIdAndEntryDate(userId, targetDate)
-            ?: JournalEntryEntity(
+        val entryToSave = entity ?: JournalEntryEntity(
                 user = userService.requireEntity(userId),
                 entryDate = targetDate,
                 body = "",
@@ -48,12 +52,46 @@ class JournalService(
                 createdAt = Time.now()
             )
 
-        entity.body = request.body
-        entity.comfortMessage = comfortMessage
-        entity.createdAt = Time.now()
-        entity.replaceEmotions(request.emotions)
+        entryToSave.body = request.body
+        entryToSave.comfortMessage = comfortMessage
+        entryToSave.createdAt = Time.now()
+        entryToSave.replaceEmotions(request.emotions)
 
-        return journalEntryRepository.save(entity).toResponse()
+        return try {
+            journalEntryRepository.saveAndFlush(entryToSave).toResponse()
+        } catch (_: OptimisticLockingFailureException) {
+            throw conflict()
+        }
+    }
+
+    @Transactional
+    fun delete(userId: String, date: LocalDate, expectedVersion: Long): DeleteJournalEntryResponse {
+        val entity = journalEntryRepository.findByUserIdAndEntryDate(userId, date)
+            ?: return DeleteJournalEntryResponse(deleted = false)
+        verifyExpectedVersion(entity, expectedVersion)
+        return try {
+            journalEntryRepository.delete(entity)
+            journalEntryRepository.flush()
+            DeleteJournalEntryResponse(deleted = true)
+        } catch (_: OptimisticLockingFailureException) {
+            throw conflict()
+        }
+    }
+
+    private fun verifyExpectedVersion(entity: JournalEntryEntity?, expectedVersion: Long?) {
+        if (expectedVersion == null) return
+        val matchesCreate = entity == null && expectedVersion == NEW_ENTRY_VERSION
+        val matchesUpdate = entity != null && entity.version == expectedVersion
+        if (!matchesCreate && !matchesUpdate) {
+            throw conflict()
+        }
+    }
+
+    private fun conflict() =
+        ResponseStatusException(HttpStatus.CONFLICT, "Journal entry changed on another device")
+
+    companion object {
+        const val NEW_ENTRY_VERSION = -1L
     }
 
     private fun getRecentEmotionSummary(userId: String): List<String> =
@@ -83,6 +121,7 @@ class JournalService(
             emotions = emotions.map { JournalEmotionResponse(id = it.emotionId, label = it.label) },
             body = body,
             comfortMessage = comfortMessage,
-            createdAt = createdAt
+            createdAt = createdAt,
+            version = version
         )
 }

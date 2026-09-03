@@ -16,7 +16,8 @@ data class JournalEntryResponse(
     val emotions: List<JournalEmotionResponse>,
     val body: String,
     val comfortMessage: String,
-    val createdAt: OffsetDateTime
+    val createdAt: OffsetDateTime,
+    val version: Long
 )
 
 data class JournalEntryRequest(
@@ -24,7 +25,12 @@ data class JournalEntryRequest(
     @field:NotEmpty
     @field:Size(min = 1, max = 3)
     val emotions: List<@NotBlank String>,
-    val body: String = ""
+    val body: String = "",
+    val expectedVersion: Long? = null
+)
+
+data class DeleteJournalEntryResponse(
+    val deleted: Boolean
 )
 
 data class JournalComfortContext(
