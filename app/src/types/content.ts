@@ -35,6 +35,7 @@ export type ScreeningResult = {
   recommendedActions: string[];
   recommendedRescreenAt: string;
   requiresSafetyPrompt: boolean;
+  comparisonScore?: number;
 };
 
 export type ScreeningQuestionOption = { value: string; label: string; score?: number | null };
