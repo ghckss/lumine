@@ -130,7 +130,8 @@ function buildLocalResult(questions: ReturnType<typeof flattenFallback>, answers
     publicComfortMessage: crisis ? "당신의 마음이 많이 지쳐있는 것 같아요. 혼자 버티려 하지 않아도 돼요. 도움을 요청하는 것은 용기 있는 일이에요." : "오늘 자신의 마음을 들여다보는 시간을 가진 것이 정말 소중해요. 작은 불편함도 솔직하게 마주한 나를 다독여주세요.",
     recommendedActions: ["규칙적인 수면 시간을 지켜보세요", "가벼운 산책이나 스트레칭을 시도해보세요", "신뢰하는 사람과 솔직하게 이야기 나눠보세요"],
     recommendedRescreenAt: next.toISOString().slice(0, 10),
-    requiresSafetyPrompt: crisis
+    requiresSafetyPrompt: crisis,
+    comparisonScore: score
   };
 }
 

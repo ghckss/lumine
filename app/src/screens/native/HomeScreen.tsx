@@ -4,16 +4,8 @@ import { tokens } from "../../config/tokens";
 import { useApp } from "../../context/AppContext";
 import { useSession } from "../../context/SessionContext";
 import { BottomTabs, Card, EmotionChip, Page, PageScroll, typography } from "../../components/NativeUI";
+import { buildMindReport, listIsoDays, localIsoDate } from "../../lib/mind-report";
 import { getEmotionColor } from "../../types/content";
-
-function isoDay(offset = 0) {
-  const date = new Date();
-  date.setDate(date.getDate() + offset);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
 
 function monthDay(isoDate: string) {
   const [, month, day] = isoDate.split("-").map(Number);
@@ -32,18 +24,21 @@ export function HomeScreen() {
   const { journalRecords, screeningResults, navigate, isLoading, isGuest } = useApp();
   const { session } = useSession();
   const displayName = isGuest ? "게스트" : session?.displayName ?? "루민";
-  const lastDays = useMemo(() => Array.from({ length: 7 }, (_, index) => isoDay(index - 6)), []);
+  const referenceDate = localIsoDate();
+  const weeklyReport = useMemo(() => buildMindReport({
+    period: "week",
+    referenceDate,
+    journals: journalRecords,
+    screenings: screeningResults
+  }), [journalRecords, referenceDate, screeningResults]);
+  const weekDays = useMemo(() => listIsoDays(weeklyReport.currentRange.start, weeklyReport.fullPeriodEnd), [weeklyReport.currentRange.start, weeklyReport.fullPeriodEnd]);
   const byDate = useMemo(() => new Map(journalRecords.map((record) => [record.date, record])), [journalRecords]);
   const recent = journalRecords.slice(0, 3);
   const lastScreeningDays = screeningResults[0]
     ? Math.floor((Date.now() - new Date(screeningResults[0].completedDate).getTime()) / 86400000)
     : Number.POSITIVE_INFINITY;
   const showScreeningReminder = screeningResults.length === 0 || lastScreeningDays >= 30;
-  const topEmotions = useMemo(() => {
-    const counts = new Map<string, number>();
-    journalRecords.filter((record) => lastDays.includes(record.date)).forEach((record) => record.emotions.forEach((emotion) => counts.set(emotion, (counts.get(emotion) ?? 0) + 1)));
-    return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([emotion]) => emotion);
-  }, [journalRecords, lastDays]);
+  const topEmotions = weeklyReport.topEmotions.map((item) => item.emotion);
 
   return (
     <Page>
@@ -69,26 +64,28 @@ export function HomeScreen() {
           </Pressable>
         ) : null}
 
-        <Card style={styles.sectionCard}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>최근 7일 기록</Text>
-            <Text style={styles.sectionLink}>{lastDays.filter((day) => byDate.has(day)).length}일 / 7일</Text>
-          </View>
-          <View style={styles.weekRow}>
-            {lastDays.map((day) => {
-              const record = byDate.get(day);
-              const color = record ? getEmotionColor(record.emotions[0]) : tokens.background;
-              return (
-                <View key={day} style={styles.dayColumn}>
-                  <View style={[styles.dayBox, { backgroundColor: record ? `${color}55` : tokens.background, borderColor: record ? color : "transparent" }]}>
-                    <Text style={styles.dayEmotion}>{record ? record.emotions[0].slice(0, 2) : "—"}</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel="이번 주 마음 리포트 보기" onPress={() => navigate("mind-report")} style={({ pressed }) => pressed && styles.pressed}>
+          <Card style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <View><Text style={styles.sectionTitle}>이번 주 마음 리포트</Text><Text style={styles.reportHint}>기록의 흐름을 자세히 살펴보세요</Text></View>
+              <View style={styles.reportLink}><Text style={styles.sectionLink}>{weeklyReport.recordedDays}일 / 7일</Text><Text style={styles.reportArrow}>›</Text></View>
+            </View>
+            <View style={styles.weekRow}>
+              {weekDays.map((day) => {
+                const record = byDate.get(day);
+                const color = record ? getEmotionColor(record.emotions[0]) : tokens.background;
+                return (
+                  <View key={day} style={styles.dayColumn}>
+                    <View style={[styles.dayBox, { backgroundColor: record ? `${color}55` : tokens.background, borderColor: record ? color : "transparent" }]}>
+                      <Text style={styles.dayEmotion}>{record ? record.emotions[0].slice(0, 2) : "—"}</Text>
+                    </View>
+                    <Text style={styles.dayLabel}>{monthDay(day)}</Text>
                   </View>
-                  <Text style={styles.dayLabel}>{monthDay(day)}</Text>
-                </View>
-              );
-            })}
-          </View>
-        </Card>
+                );
+              })}
+            </View>
+          </Card>
+        </Pressable>
 
         {topEmotions.length > 0 ? (
           <Card style={styles.sectionCard}>
@@ -145,6 +142,9 @@ const styles = StyleSheet.create({
   sectionHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 },
   sectionTitle: { fontSize: 14, fontWeight: "700", color: tokens.text },
   sectionLink: { fontSize: 11, fontWeight: "600", color: tokens.primary },
+  reportHint: { ...typography.caption, marginTop: 2 },
+  reportLink: { flexDirection: "row", alignItems: "center", gap: 4 },
+  reportArrow: { color: tokens.primary, fontSize: 20, lineHeight: 22 },
   weekRow: { flexDirection: "row", gap: 5, marginTop: 13 },
   dayColumn: { flex: 1, alignItems: "center", gap: 4 },
   dayBox: { width: "100%", aspectRatio: 1, borderRadius: 9, borderWidth: 1, alignItems: "center", justifyContent: "center" },

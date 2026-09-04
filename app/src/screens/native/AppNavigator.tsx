@@ -5,6 +5,7 @@ import { tokens } from "../../config/tokens";
 import type { AppRoute } from "../../types/content";
 import { HomeScreen } from "./HomeScreen";
 import { DiaryScreen, RecordDetailScreen, RecordsScreen } from "./JournalScreens";
+import { MindReportScreen } from "./MindReportScreen";
 import { CheckQuestionScreen, CheckResultScreen, CheckStartScreen } from "./ScreeningScreens";
 import { DataManagementScreen, LegalScreen, MenuScreen, SafetyHelpScreen } from "./SupportAndSettingsScreens";
 
@@ -46,6 +47,7 @@ function renderScreen(route: AppRoute, onRequestLogin: () => void) {
     case "diary": return <DiaryScreen />;
     case "records": return <RecordsScreen />;
     case "record-detail": return <RecordDetailScreen />;
+    case "mind-report": return <MindReportScreen />;
     case "check-start": return <CheckStartScreen />;
     case "check-question": return <CheckQuestionScreen />;
     case "check-result": return <CheckResultScreen />;

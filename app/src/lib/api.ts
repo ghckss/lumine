@@ -145,7 +145,7 @@ export const api = {
     return request<ScreeningQuestionnaire>("/api/screening/questionnaire");
   },
   getScreeningHistory() {
-    return request<Array<{ completedDate: string; publicSummary: string; recommendedRescreenAt: string; requiresSafetyPrompt: boolean }>>("/api/screening/history");
+    return request<Array<{ completedDate: string; publicSummary: string; recommendedRescreenAt: string; requiresSafetyPrompt: boolean; comparisonScore?: number }>>("/api/screening/history");
   },
   importGuestContent(items: ContentImportItem[]) {
     return request<ContentImportResult>("/api/users/me/content-import", {

@@ -134,7 +134,7 @@ export function AppProvider({ children, isGuest }: { children: React.ReactNode; 
 
       if (session) {
         const [serverJournals, serverScreenings] = await Promise.all([
-          api.getJournalHistory(30).catch(() => null),
+          api.getJournalHistory(70).catch(() => null),
           api.getScreeningHistory().catch(() => null)
         ]);
 
@@ -153,7 +153,8 @@ export function AppProvider({ children, isGuest }: { children: React.ReactNode; 
             publicComfortMessage: "오늘 내 마음을 돌아본 것만으로도 충분히 의미 있어요.",
             recommendedActions: [],
             recommendedRescreenAt: result.recommendedRescreenAt,
-            requiresSafetyPrompt: result.requiresSafetyPrompt
+            requiresSafetyPrompt: result.requiresSafetyPrompt,
+            comparisonScore: result.comparisonScore
           }));
           setScreeningResults(mapped);
           await saveDeviceCache(screeningCacheKey, mapped);

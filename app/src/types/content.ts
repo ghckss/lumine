@@ -7,6 +7,7 @@ export type PageName =
   | "diary"
   | "records"
   | "record-detail"
+  | "mind-report"
   | "safety-help"
   | "menu"
   | "data-management"
