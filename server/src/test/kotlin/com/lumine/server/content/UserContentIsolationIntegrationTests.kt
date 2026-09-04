@@ -55,6 +55,7 @@ class UserContentIsolationIntegrationTests(
             status { isOk() }
             jsonPath("$.data.length()") { value(1) }
             jsonPath("$.data[0].publicSummary") { value("오늘은 비교적 크게 무겁지 않은 상태로 보여요.") }
+            jsonPath("$.data[0].comparisonScore") { value(0) }
         }
         mockMvc.get("/api/screening/history") {
             bearer(google)
@@ -62,6 +63,32 @@ class UserContentIsolationIntegrationTests(
             status { isOk() }
             jsonPath("$.data.length()") { value(1) }
             jsonPath("$.data[0].publicSummary") { value("최근 마음이 쉽게 편해지지 않았을 수 있어요.") }
+            jsonPath("$.data[0].comparisonScore") { value(10) }
+        }
+    }
+
+    @Test
+    fun `screening comparison score ignores narrative text`() {
+        val token = login("kakao", "score")
+        val answers = (1..10).associate { "q$it" to "2" } + mapOf(
+            "n1" to "999",
+            "q11" to "3"
+        )
+
+        mockMvc.post("/api/screening/submissions") {
+            bearer(token)
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(mapOf("answers" to answers))
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data.comparisonScore") { value(20) }
+        }
+
+        mockMvc.get("/api/screening/history") {
+            bearer(token)
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data[0].comparisonScore") { value(20) }
         }
     }
 
@@ -139,10 +166,10 @@ class UserContentIsolationIntegrationTests(
         }.andExpect { status { isOk() } }
     }
 
-    private fun login(provider: String): String {
+    private fun login(provider: String, subjectSuffix: String = "content-isolation"): String {
         val response = mockMvc.post("/api/auth/login/$provider") {
             contentType = MediaType.APPLICATION_JSON
-            content = """{"providerUserId":"mock-$provider-content-isolation"}"""
+            content = """{"providerUserId":"mock-$provider-$subjectSuffix"}"""
         }.andExpect { status { isOk() } }
             .andReturn().response.contentAsString
         return objectMapper.readTree(response).path("data").path("accessToken").asText()

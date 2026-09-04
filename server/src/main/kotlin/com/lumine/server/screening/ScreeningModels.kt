@@ -41,14 +41,16 @@ data class ScreeningResultResponse(
     val publicComfortMessage: String,
     val recommendedActions: List<String>,
     val recommendedRescreenAt: LocalDate,
-    val requiresSafetyPrompt: Boolean
+    val requiresSafetyPrompt: Boolean,
+    val comparisonScore: Int
 )
 
 data class ScreeningHistoryItemResponse(
     val completedDate: LocalDate,
     val publicSummary: String,
     val recommendedRescreenAt: LocalDate,
-    val requiresSafetyPrompt: Boolean
+    val requiresSafetyPrompt: Boolean,
+    val comparisonScore: Int
 )
 
 data class ScreeningExportResponse(

@@ -162,7 +162,7 @@ class ScreeningService(
 
     @Transactional
     fun submit(userId: String, request: ScreeningSubmissionRequest): ScreeningResultResponse {
-        val score = request.answers.values.sumOf { it.toIntOrNull() ?: 0 }
+        val score = comparisonScore(request.answers)
         val withdrawalScore = request.answers["q9"]?.toIntOrNull() ?: 0
         val hopeScore = request.answers["q10"]?.toIntOrNull() ?: 0
         val requiresSafetyPrompt = withdrawalScore >= 3 || hopeScore >= 3
@@ -181,7 +181,8 @@ class ScreeningService(
             publicComfortMessage = narrative.publicComfortMessage,
             recommendedActions = narrative.recommendedActions,
             recommendedRescreenAt = Time.today().plusWeeks(4),
-            requiresSafetyPrompt = requiresSafetyPrompt
+            requiresSafetyPrompt = requiresSafetyPrompt,
+            comparisonScore = score
         )
 
         screeningSessionRepository.save(
@@ -214,7 +215,8 @@ class ScreeningService(
                 completedDate = it.completedDate,
                 publicSummary = it.publicSummary,
                 recommendedRescreenAt = it.recommendedRescreenAt,
-                requiresSafetyPrompt = it.requiresSafetyPrompt
+                requiresSafetyPrompt = it.requiresSafetyPrompt,
+                comparisonScore = comparisonScore(it.answers.associate { answer -> answer.questionId to answer.answerValue })
             )
         }
 
@@ -238,6 +240,16 @@ class ScreeningService(
             publicComfortMessage = publicComfortMessage,
             recommendedActions = recommendedActions.map { it.action },
             recommendedRescreenAt = recommendedRescreenAt,
-            requiresSafetyPrompt = requiresSafetyPrompt
+            requiresSafetyPrompt = requiresSafetyPrompt,
+            comparisonScore = comparisonScore(answers.associate { it.questionId to it.answerValue })
         )
+
+    private fun comparisonScore(answers: Map<String, String>): Int =
+        answers.entries.sumOf { (questionId, answer) ->
+            if (questionId in SCORED_QUESTION_IDS) answer.toIntOrNull()?.takeIf { it in 0..3 } ?: 0 else 0
+        }
+
+    companion object {
+        private val SCORED_QUESTION_IDS = (1..10).mapTo(mutableSetOf()) { "q$it" }
+    }
 }
