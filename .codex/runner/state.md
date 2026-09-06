@@ -1,6 +1,88 @@
 # Runner State Store
 
-## Active Workflow — 3.2 주간·월간 마음 리포트
+## Active Workflow — 3.3 달력형 기록 탐색
+
+### Requirement Contract
+
+- 월간 달력에서 날짜별 기록 유무와 첫 번째 저장 감정을 대표 감정으로 표시하고, 날짜 선택 시 기록 상세로 이동한다.
+- 감정은 복수 선택 OR 조건으로 필터링하며 기본 감정과 사용자 직접 입력 감정을 모두 지원한다.
+- 기본 조회 범위는 선택한 달이고, 사용자가 시작일·종료일을 지정하면 해당 기간이 기록 목록 조회 범위를 대체한다.
+- 일기 본문을 앞뒤 공백 제거·대소문자 무시 부분 일치로 검색하며 감정·기간·본문 조건을 함께 적용하고 초기화할 수 있다.
+- 로그인 계정과 게스트 데이터를 분리하고 로컬 전용·대기·실패·충돌 기록도 현재 사용자 결과에 포함한다.
+- AI 의미 검색, 검색어·필터 저장, 알림, 감정 통계·리포트 변경, 위로 문구 검색은 범위에서 제외한다.
+- 빈 본문, 공백 검색어, 역전 기간, 윤년·연도 전환, 중복 날짜·삭제 유예·동기화 overlay를 명시적으로 처리한다.
+- 완료 시 `docs/current-feature-patch-notes.md`를 현재 구현 기준으로 갱신한다.
+
+### Implementation Plan
+
+1. 서버에 인증 사용자 범위의 시작일·종료일 일기 조회를 추가하고 날짜 검증·정렬·사용자 격리 통합 테스트를 보강한다.
+2. ISO 달력 연산, 월간 6주 그리드, 기간 검증, 감정 후보와 조합 필터를 담당하는 순수 앱 도메인 모듈 및 단위 테스트를 추가한다.
+3. AppContext에 날짜 범위 로드·캐시 병합 경계를 추가해 서버 결과와 현재 계정의 미동기화 작업을 함께 유지한다.
+4. 기록 목록을 전용 달력 탐색 화면으로 분리하고 월 이동, 날짜 선택, 본문 검색, 복수 감정 필터, 직접 기간 입력, 결과 수·초기화·빈 상태를 연결한다.
+5. 현재 기능 패치노트를 갱신하고 서버/앱 테스트, 타입 검사, Android/iOS 빌드, 구조·dead-code·회귀 검증을 수행한다.
+
+### Active Decision Records
+
+- 2026-09-07: Gate 1 요구사항 계약 승인.
+- 2026-09-07: Gate 2 구현 계획 승인, Implementation Autopilot 시작.
+- 2026-09-07: 서버의 최근 70개 초기 로드만으로 과거 달·임의 기간을 정확히 조회할 수 없어 사용자 범위 날짜 조회를 계획에 포함한다.
+- 2026-09-07: 본문 검색과 감정 필터는 선택된 유효 기간의 기록을 받은 뒤 앱의 순수 도메인 모듈에서 조합한다.
+- 2026-09-07: 기존 `JournalScreens.tsx`의 작성·상세와 탐색 화면의 책임을 분리해 후속 탐색 기능의 변경 범위를 줄인다.
+
+### Active Status
+
+- stage: implementation autopilot
+- current_chunk: 1 — server date range query
+- max_self_repair_attempts: 2
+- max_review_iterations: 2
+- max_refinement_iterations: 2
+
+### Active Known Constraints
+
+- 로그인 앱은 현재 최근 일기 70개만 초기 로드하지만 게스트 캐시는 해당 사용자 기록 전체를 보관한다.
+- 서버에는 `(user_id, entry_date)` 고유 제약과 내림차순 인덱스가 있으며 일기는 날짜별 최대 한 건이다.
+- 날짜형 기록은 `YYYY-MM-DD` 문자열이고 앱의 기존 동기화 작업이 서버 결과 위에 로컬 상태를 overlay한다.
+- `docs/future-feature-planning.md`의 기존 수정은 사용자 소유 작업으로 유지한다.
+- `docs/current-feature-patch-notes.md`는 사용자의 지속 갱신 지시에 따라 이번 워크플로 범위에 포함한다.
+
+### Active Risk Reports
+
+- 빠른 월·기간 변경의 비동기 응답 순서가 뒤바뀌면 다른 범위 결과가 현재 화면에 섞일 수 있다.
+- 서버 범위 결과로 캐시를 단순 교체하면 미동기화·충돌 기록이나 다른 기간 캐시가 유실될 수 있다.
+- 현지 날짜를 JavaScript UTC 변환에 직접 통과시키면 월 경계와 요일이 어긋날 수 있다.
+- 매우 긴 직접 기간은 응답량과 렌더링 비용이 커질 수 있으나 날짜별 한 건 제약과 범위 인덱스를 활용하고 실제 결과 수를 기준으로 검증한다.
+
+### Active Current Codebase Snapshot
+
+- 시작 HEAD: `a58b449`, 브랜치 `dev`.
+- `RecordsScreen`은 `JournalScreens.tsx` 안에서 최근 기록 최대 30개와 간단한 상위 감정만 렌더링한다.
+- `AppContext`는 로그인 시 서버 최근 기록 70개를 로드하고 계정별 캐시와 journal operation을 병합한다.
+- 서버 history API는 limit 기반 최근 조회만 제공하고 날짜 범위 조회는 없다.
+- 앱에는 마음 리포트용 날짜 연산이 있으나 범용 월간 달력·조합 검색 도메인은 없다.
+- 작업 트리에는 범위 밖 기획 문서 수정과 이번 워크플로에 포함할 미추적 현재 기능 패치노트가 있다.
+
+### Active Remaining Known Issues
+
+- 구현 전.
+
+### Active Chunk Commit History
+
+- Chunk 1 commit pending — 사용자별 날짜 범위 조회 API, 날짜 검증, 범위·정렬·격리 통합 테스트.
+
+### Active Validation Logs
+
+- 계획 단계 저장소 구조 및 현재 dirty worktree 확인.
+- Chunk 1: 서버 Gradle 테스트 17개 및 서버 diff 검사 통과.
+
+### Active Review Reports
+
+- Tech Lead 구조 검토: 서버 범위 조회, 앱 데이터 병합, 순수 탐색 도메인, 화면 책임 분리의 네 경계로 구성하며 기존 동기화 source of truth를 유지한다.
+- Chunk 1 정확성·보안 검토: 양끝 포함 범위, 역전 기간 400, 날짜 내림차순, 인증 주체의 userId 범위를 확인. 필수 이슈 없음.
+- Chunk 1 성능·유지보수 검토: 기존 `(user_id, entry_date)` 인덱스와 엔티티 그래프를 재사용하고 기존 history 계약을 보존한다. 필수 이슈 없음.
+
+---
+
+## Previous Workflow — 3.2 주간·월간 마음 리포트
 
 ### Requirement Contract
 

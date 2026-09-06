@@ -43,6 +43,42 @@ class UserContentIsolationIntegrationTests(
     }
 
     @Test
+    fun `journal range is inclusive ordered and isolated by user`() {
+        val kakao = login("kakao", "journal-range")
+        val google = login("google", "journal-range")
+        saveJournal(kakao, "2026-01-31", "범위 이전")
+        saveJournal(kakao, "2026-02-01", "첫날")
+        saveJournal(kakao, "2026-02-15", "가운데")
+        saveJournal(kakao, "2026-02-28", "마지막날")
+        saveJournal(kakao, "2026-03-01", "범위 이후")
+        saveJournal(google, "2026-02-15", "다른 사용자")
+
+        mockMvc.get("/api/journal/entries/range") {
+            bearer(kakao)
+            param("startDate", "2026-02-01")
+            param("endDate", "2026-02-28")
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data.length()") { value(3) }
+            jsonPath("$.data[0].date") { value("2026-02-28") }
+            jsonPath("$.data[1].date") { value("2026-02-15") }
+            jsonPath("$.data[1].body") { value("가운데") }
+            jsonPath("$.data[2].date") { value("2026-02-01") }
+        }
+    }
+
+    @Test
+    fun `journal range rejects reversed dates`() {
+        val token = login("kakao", "journal-range-validation")
+
+        mockMvc.get("/api/journal/entries/range") {
+            bearer(token)
+            param("startDate", "2026-03-01")
+            param("endDate", "2026-02-28")
+        }.andExpect { status { isBadRequest() } }
+    }
+
+    @Test
     fun `screening history is isolated by user`() {
         val kakao = login("kakao")
         val google = login("google")
@@ -96,6 +132,10 @@ class UserContentIsolationIntegrationTests(
     fun `personal content endpoints reject anonymous access`() {
         mockMvc.get("/api/journal/entries/history")
             .andExpect { status { isUnauthorized() } }
+        mockMvc.get("/api/journal/entries/range") {
+            param("startDate", "2026-02-01")
+            param("endDate", "2026-02-28")
+        }.andExpect { status { isUnauthorized() } }
         mockMvc.get("/api/screening/history")
             .andExpect { status { isUnauthorized() } }
         mockMvc.post("/api/screening/submissions") {

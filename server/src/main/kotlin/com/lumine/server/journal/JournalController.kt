@@ -31,6 +31,14 @@ class JournalController(
         @RequestParam(name = "limit", defaultValue = "10") limit: Int
     ): ApiResponse<List<JournalEntryResponse>> = ApiResponse(journalService.getEntries(principal.userId, limit))
 
+    @GetMapping("/range")
+    fun getEntriesByRange(
+        @AuthenticationPrincipal principal: AuthenticatedUser,
+        @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) startDate: LocalDate,
+        @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) endDate: LocalDate
+    ): ApiResponse<List<JournalEntryResponse>> =
+        ApiResponse(journalService.getEntriesByRange(principal.userId, startDate, endDate))
+
     @PostMapping
     fun saveEntry(
         @AuthenticationPrincipal principal: AuthenticatedUser,

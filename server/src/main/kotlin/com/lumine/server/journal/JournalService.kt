@@ -25,6 +25,16 @@ class JournalService(
         findRecentEntriesWithEmotions(userId, limit).map { it.toResponse() }
 
     @Transactional(readOnly = true)
+    fun getEntriesByRange(userId: String, startDate: LocalDate, endDate: LocalDate): List<JournalEntryResponse> {
+        if (startDate > endDate) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "startDate must not be after endDate")
+        }
+        return journalEntryRepository
+            .findAllByUserIdAndEntryDateBetweenOrderByEntryDateDescCreatedAtDesc(userId, startDate, endDate)
+            .map { it.toResponse() }
+    }
+
+    @Transactional(readOnly = true)
     fun getAllEntries(userId: String): List<JournalEntryResponse> =
         journalEntryRepository.findAllByUserIdOrderByEntryDateDescCreatedAtDesc(userId).map { it.toResponse() }
 

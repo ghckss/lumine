@@ -19,5 +19,12 @@ interface JournalEntryRepository : JpaRepository<JournalEntryEntity, Long> {
     @EntityGraph(attributePaths = ["emotions"])
     fun findAllByUserIdOrderByEntryDateDescCreatedAtDesc(userId: String): List<JournalEntryEntity>
 
+    @EntityGraph(attributePaths = ["emotions"])
+    fun findAllByUserIdAndEntryDateBetweenOrderByEntryDateDescCreatedAtDesc(
+        userId: String,
+        startDate: LocalDate,
+        endDate: LocalDate
+    ): List<JournalEntryEntity>
+
     fun findAllByUserId(userId: String): List<JournalEntryEntity>
 }
