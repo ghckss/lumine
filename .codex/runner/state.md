@@ -32,7 +32,7 @@
 ### Active Status
 
 - stage: implementation autopilot
-- current_chunk: 1 — server date range query
+- current_chunk: 2 — calendar and filter domain
 - max_self_repair_attempts: 2
 - max_review_iterations: 2
 - max_refinement_iterations: 2
@@ -67,18 +67,22 @@
 
 ### Active Chunk Commit History
 
-- Chunk 1 commit pending — 사용자별 날짜 범위 조회 API, 날짜 검증, 범위·정렬·격리 통합 테스트.
+- `919ce9a` — Chunk 1: 사용자별 날짜 범위 조회 API, 날짜 검증, 범위·정렬·격리 통합 테스트.
+- Chunk 2 commit pending — 공용 ISO 날짜 연산, 6주 월간 그리드, 기간·감정·본문 조합 필터와 단위 테스트.
 
 ### Active Validation Logs
 
 - 계획 단계 저장소 구조 및 현재 dirty worktree 확인.
 - Chunk 1: 서버 Gradle 테스트 17개 및 서버 diff 검사 통과.
+- Chunk 2: 앱 Vitest 25개 테스트, TypeScript 검사 및 앱 diff 검사 통과.
 
 ### Active Review Reports
 
 - Tech Lead 구조 검토: 서버 범위 조회, 앱 데이터 병합, 순수 탐색 도메인, 화면 책임 분리의 네 경계로 구성하며 기존 동기화 source of truth를 유지한다.
 - Chunk 1 정확성·보안 검토: 양끝 포함 범위, 역전 기간 400, 날짜 내림차순, 인증 주체의 userId 범위를 확인. 필수 이슈 없음.
 - Chunk 1 성능·유지보수 검토: 기존 `(user_id, entry_date)` 인덱스와 엔티티 그래프를 재사용하고 기존 history 계약을 보존한다. 필수 이슈 없음.
+- Chunk 2 정확성·타입 검토: 윤년·연도 이동·역전/실재하지 않는 날짜·복수 감정 OR·공백 제거 부분 검색·중복 날짜를 확인. 필수 이슈 없음.
+- Chunk 2 구조·유지보수 검토: 마음 리포트의 날짜 유틸을 범용 모듈로 이동해 중복 source of truth를 제거하고 탐색 필터를 UI 비의존 순수 함수로 분리. 필수 이슈 없음.
 
 ---
 

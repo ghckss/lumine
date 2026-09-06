@@ -1,4 +1,7 @@
 import type { JournalRecord, ScreeningResult } from "../types/content";
+import { addDays, formatIsoDate, parseIsoDate } from "./calendar-date";
+
+export { listIsoDays, localIsoDate } from "./calendar-date";
 
 export type MindReportPeriod = "week" | "month";
 
@@ -139,20 +142,6 @@ export function getPeriodBoundaries(period: MindReportPeriod, referenceDate: str
   };
 }
 
-export function localIsoDate(date = new Date()) {
-  return [date.getFullYear(), date.getMonth() + 1, date.getDate()]
-    .map((part, index) => String(part).padStart(index === 0 ? 4 : 2, "0"))
-    .join("-");
-}
-
-export function listIsoDays(start: string, end: string) {
-  const days: string[] = [];
-  for (let cursor = parseIsoDate(start); cursor <= parseIsoDate(end); cursor = addDays(cursor, 1)) {
-    days.push(formatIsoDate(cursor));
-  }
-  return days;
-}
-
 function countEmotions(journals: JournalRecord[]) {
   const counts = new Map<string, number>();
   journals.forEach((journal) => journal.emotions.forEach((emotion) => {
@@ -216,21 +205,4 @@ function compareHeavyDays(a: ReportDay, b: ReportDay) {
 
 function daysInclusive(start: string, end: string) {
   return Math.round((parseIsoDate(end).getTime() - parseIsoDate(start).getTime()) / 86400000) + 1;
-}
-
-function parseIsoDate(value: string) {
-  const [year, month, day] = value.split("-").map(Number);
-  return new Date(Date.UTC(year, month - 1, day));
-}
-
-function addDays(date: Date, days: number) {
-  const next = new Date(date.getTime());
-  next.setUTCDate(next.getUTCDate() + days);
-  return next;
-}
-
-function formatIsoDate(date: Date) {
-  return [date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate()]
-    .map((part, index) => String(part).padStart(index === 0 ? 4 : 2, "0"))
-    .join("-");
 }
