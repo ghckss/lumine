@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { JournalRecord } from "../types/content";
 import { buildMonthGrid, monthRange, shiftMonth } from "./calendar-date";
-import { collectEmotionOptions, effectiveDateRange, filterJournalRecords, validateDateRange } from "./journal-explorer";
+import { collectEmotionOptions, effectiveDateRange, filterJournalRecords, replaceJournalRange, validateDateRange } from "./journal-explorer";
 
 function journal(date: string, emotions: string[], body = ""): JournalRecord {
   return { id: `journal:${date}`, date, emotions, body, comfortMessage: "", createdAt: `${date}T00:00:00Z`, version: 0, syncStatus: "synced" };
@@ -58,5 +58,10 @@ describe("journal explorer", () => {
 
   it("includes custom emotions after preferred present emotions", () => {
     expect(collectEmotionOptions(records, ["기쁨", "평온", "불안"])).toEqual(["평온", "불안", "홀가분"]);
+  });
+
+  it("replaces only the fetched range and preserves records outside it", () => {
+    const next = replaceJournalRange(records, [journal("2026-09-04", ["기쁨"])], { start: "2026-09-01", end: "2026-09-30" });
+    expect(next.map((record) => record.date)).toEqual(["2026-09-04", "2026-08-31"]);
   });
 });

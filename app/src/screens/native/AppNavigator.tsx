@@ -4,7 +4,8 @@ import { AppRouteScope, STACK_TRANSITION_MS, useApp } from "../../context/AppCon
 import { tokens } from "../../config/tokens";
 import type { AppRoute } from "../../types/content";
 import { HomeScreen } from "./HomeScreen";
-import { DiaryScreen, RecordDetailScreen, RecordsScreen } from "./JournalScreens";
+import { DiaryScreen, RecordDetailScreen } from "./JournalScreens";
+import { RecordsScreen } from "./RecordsScreen";
 import { MindReportScreen } from "./MindReportScreen";
 import { CheckQuestionScreen, CheckResultScreen, CheckStartScreen } from "./ScreeningScreens";
 import { DataManagementScreen, LegalScreen, MenuScreen, SafetyHelpScreen } from "./SupportAndSettingsScreens";

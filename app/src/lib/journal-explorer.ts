@@ -42,3 +42,10 @@ export function collectEmotionOptions(records: JournalRecord[], preferred: reado
   const custom = [...present].filter((emotion) => !preferred.includes(emotion)).sort((a, b) => a.localeCompare(b, "ko"));
   return [...known, ...custom];
 }
+
+export function replaceJournalRange(records: JournalRecord[], replacements: JournalRecord[], range: DateRange) {
+  return [
+    ...replacements,
+    ...records.filter((record) => record.date < range.start || record.date > range.end)
+  ];
+}

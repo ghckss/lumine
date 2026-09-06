@@ -32,7 +32,7 @@
 ### Active Status
 
 - stage: implementation autopilot
-- current_chunk: 2 — calendar and filter domain
+- current_chunk: 3 — range loading and explorer UI
 - max_self_repair_attempts: 2
 - max_review_iterations: 2
 - max_refinement_iterations: 2
@@ -68,13 +68,15 @@
 ### Active Chunk Commit History
 
 - `919ce9a` — Chunk 1: 사용자별 날짜 범위 조회 API, 날짜 검증, 범위·정렬·격리 통합 테스트.
-- Chunk 2 commit pending — 공용 ISO 날짜 연산, 6주 월간 그리드, 기간·감정·본문 조합 필터와 단위 테스트.
+- `cbea31f` — Chunk 2: 공용 ISO 날짜 연산, 6주 월간 그리드, 기간·감정·본문 조합 필터와 단위 테스트.
+- Chunk 3 commit pending — 범위 로드·캐시 병합, 달력 탐색, 본문·감정·기간 필터 UI와 기존 목록 책임 분리.
 
 ### Active Validation Logs
 
 - 계획 단계 저장소 구조 및 현재 dirty worktree 확인.
 - Chunk 1: 서버 Gradle 테스트 17개 및 서버 diff 검사 통과.
 - Chunk 2: 앱 Vitest 25개 테스트, TypeScript 검사 및 앱 diff 검사 통과.
+- Chunk 3: 앱 Vitest 26개 테스트, TypeScript 검사, Android Debug 빌드, iOS Simulator Debug 전체 빌드 및 앱 diff 검사 통과.
 
 ### Active Review Reports
 
@@ -83,6 +85,9 @@
 - Chunk 1 성능·유지보수 검토: 기존 `(user_id, entry_date)` 인덱스와 엔티티 그래프를 재사용하고 기존 history 계약을 보존한다. 필수 이슈 없음.
 - Chunk 2 정확성·타입 검토: 윤년·연도 이동·역전/실재하지 않는 날짜·복수 감정 OR·공백 제거 부분 검색·중복 날짜를 확인. 필수 이슈 없음.
 - Chunk 2 구조·유지보수 검토: 마음 리포트의 날짜 유틸을 범용 모듈로 이동해 중복 source of truth를 제거하고 탐색 필터를 UI 비의존 순수 함수로 분리. 필수 이슈 없음.
+- Chunk 3 정확성 검토 1회차: 조회 실패 재시도가 동일 state를 설정해 새 요청을 만들지 않는 문제를 reload sequence로 수정하고 범위 캐시 교체를 순수 함수·테스트로 고정.
+- Chunk 3 성능 검토 1회차: 긴 직접 기간에서 모든 결과를 즉시 렌더링하는 ScrollView를 FlatList 가상 목록으로 교체.
+- Chunk 3 보안·타입·접근성·유지보수 재검토: 계정 전환 응답 차단, operation overlay, 선택 상태 노출, 화면 책임 분리와 obsolete 최근 30개 목록 제거를 확인. 추가 필수 이슈 없음.
 
 ---
 

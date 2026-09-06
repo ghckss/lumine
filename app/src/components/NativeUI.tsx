@@ -54,7 +54,7 @@ export function TopBar({ title, showBack = true, showMenu = false, onBack }: { t
 
 export function PrimaryButton({ label, onPress, disabled = false, variant = "primary" }: { label: string; onPress: () => void; disabled?: boolean; variant?: "primary" | "outline" | "danger" }) {
   return (
-    <Pressable disabled={disabled} onPress={onPress} style={({ pressed }) => [
+    <Pressable accessibilityRole="button" accessibilityState={{ disabled }} disabled={disabled} onPress={onPress} style={({ pressed }) => [
       styles.button,
       variant === "outline" && styles.outlineButton,
       variant === "danger" && styles.dangerButton,
@@ -70,7 +70,7 @@ export function EmotionChip({ emotion, selected = false, onPress }: { emotion: s
   const color = getEmotionColor(emotion);
   const content = <Text style={styles.chipText}>{selected ? "✓ " : ""}{emotion}</Text>;
   const chipStyle = [styles.chip, { backgroundColor: `${color}${selected ? "55" : "25"}`, borderColor: selected ? color : `${color}88` }];
-  return onPress ? <Pressable onPress={onPress} style={({ pressed }) => [chipStyle, pressed && styles.pressed]}>{content}</Pressable> : <View style={chipStyle}>{content}</View>;
+  return onPress ? <Pressable accessibilityRole="button" accessibilityState={{ selected }} onPress={onPress} style={({ pressed }) => [chipStyle, pressed && styles.pressed]}>{content}</Pressable> : <View style={chipStyle}>{content}</View>;
 }
 
 export function BottomTabs() {

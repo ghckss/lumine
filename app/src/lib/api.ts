@@ -141,6 +141,10 @@ export const api = {
   getJournalHistory(limit = 30) {
     return request<ServerJournalEntry[]>(`/api/journal/entries/history?limit=${limit}`);
   },
+  getJournalRange(startDate: string, endDate: string) {
+    const query = new URLSearchParams({ startDate, endDate });
+    return request<ServerJournalEntry[]>(`/api/journal/entries/range?${query.toString()}`);
+  },
   getScreeningQuestionnaire() {
     return request<ScreeningQuestionnaire>("/api/screening/questionnaire");
   },

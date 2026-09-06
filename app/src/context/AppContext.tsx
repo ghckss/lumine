@@ -3,6 +3,7 @@ import { AppState } from "react-native";
 import NetInfo from "@react-native-community/netinfo";
 import { api, toJournalRecord } from "../lib/api";
 import { processJournalOperations, type JournalSyncResult } from "../lib/journal-sync";
+import { replaceJournalRange } from "../lib/journal-explorer";
 import { contentCacheKeys, loadDeviceCache, removeDeviceCache, saveDeviceCache } from "../storage/device-cache";
 import { removeJournalDraft } from "../storage/journal-drafts";
 import {
@@ -36,6 +37,7 @@ type AppContextValue = {
   goBack: () => void;
   resetTo: (page: PageName, params?: Record<string, unknown>) => void;
   saveJournal: (input: { date: string; emotions: string[]; body: string }) => Promise<JournalRecord>;
+  loadJournalRange: (startDate: string, endDate: string) => Promise<void>;
   retryJournal: (date: string) => Promise<void>;
   deleteJournal: (record: JournalRecord) => Promise<void>;
   undoJournalDelete: () => Promise<void>;
@@ -272,6 +274,17 @@ export function AppProvider({ children, isGuest }: { children: React.ReactNode; 
     return record;
   }, [cacheOwner, persistJournalOperations, runJournalSync, session, setAndPersistJournals]);
 
+  const loadJournalRange = useCallback(async (startDate: string, endDate: string) => {
+    if (!session) return;
+    const owner = cacheOwner;
+    const serverRecords = (await api.getJournalRange(startDate, endDate)).map(toJournalRecord);
+    if (activeOwnerRef.current !== owner) return;
+    await setAndPersistJournals(mergeJournalOperations(
+      replaceJournalRange(journalRecordsRef.current, serverRecords, { start: startDate, end: endDate }),
+      journalOperationsRef.current
+    ));
+  }, [cacheOwner, session, setAndPersistJournals]);
+
   const retryJournal = useCallback(async (date: string) => {
     const result = await runJournalSync({ automatic: false, date });
     const remaining = result?.operations.find((item) => item.date === date);
@@ -404,6 +417,7 @@ export function AppProvider({ children, isGuest }: { children: React.ReactNode; 
     stack,
     backTransitionKey,
     journalRecords,
+    loadJournalRange,
     screeningResults,
     navigate,
     goBack,
@@ -414,7 +428,7 @@ export function AppProvider({ children, isGuest }: { children: React.ReactNode; 
     undoJournalDelete,
     saveScreening,
     clearContent
-  }), [backTransitionKey, cacheOwner, clearContent, deleteJournal, goBack, isGuest, isLoading, journalRecords, navigate, pendingJournalDeletion, resetTo, retryJournal, saveJournal, saveScreening, screeningResults, stack, undoJournalDelete]);
+  }), [backTransitionKey, cacheOwner, clearContent, deleteJournal, goBack, isGuest, isLoading, journalRecords, loadJournalRange, navigate, pendingJournalDeletion, resetTo, retryJournal, saveJournal, saveScreening, screeningResults, stack, undoJournalDelete]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
