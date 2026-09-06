@@ -28,11 +28,13 @@
 - 2026-09-07: 서버의 최근 70개 초기 로드만으로 과거 달·임의 기간을 정확히 조회할 수 없어 사용자 범위 날짜 조회를 계획에 포함한다.
 - 2026-09-07: 본문 검색과 감정 필터는 선택된 유효 기간의 기록을 받은 뒤 앱의 순수 도메인 모듈에서 조합한다.
 - 2026-09-07: 기존 `JournalScreens.tsx`의 작성·상세와 탐색 화면의 책임을 분리해 후속 탐색 기능의 변경 범위를 줄인다.
+- 2026-09-07: 긴 직접 기간의 결과는 FlatList로 가상화하고 서버 응답은 날짜별 한 건 제약과 기존 범위 인덱스를 활용한다.
+- 2026-09-07: 최종 계약 대조와 구조 검토에서 추가 범위 내 결함을 발견하지 않아 Refinement Loop에 진입하지 않고 완료한다.
 
 ### Active Status
 
-- stage: implementation autopilot
-- current_chunk: 3 — range loading and explorer UI
+- stage: complete
+- current_chunk: final validation complete
 - max_self_repair_attempts: 2
 - max_review_iterations: 2
 - max_refinement_iterations: 2
@@ -54,22 +56,26 @@
 
 ### Active Current Codebase Snapshot
 
-- 시작 HEAD: `a58b449`, 브랜치 `dev`.
-- `RecordsScreen`은 `JournalScreens.tsx` 안에서 최근 기록 최대 30개와 간단한 상위 감정만 렌더링한다.
-- `AppContext`는 로그인 시 서버 최근 기록 70개를 로드하고 계정별 캐시와 journal operation을 병합한다.
-- 서버 history API는 limit 기반 최근 조회만 제공하고 날짜 범위 조회는 없다.
-- 앱에는 마음 리포트용 날짜 연산이 있으나 범용 월간 달력·조합 검색 도메인은 없다.
-- 작업 트리에는 범위 밖 기획 문서 수정과 이번 워크플로에 포함할 미추적 현재 기능 패치노트가 있다.
+- 구현 HEAD: `78bf55a`; 이후 문서·최종 검증 State Store 커밋이 추가된다. 시작점은 `a58b449`, 브랜치는 `dev`.
+- 서버는 기존 최근 history와 별도로 인증 사용자별 날짜 범위 조회를 제공한다.
+- 앱은 공용 ISO 달력 모듈과 UI 비의존 탐색 필터를 사용하고, 범위 서버 결과에 현재 owner의 journal operation을 overlay한다.
+- `RecordsScreen.tsx`는 월간 6주 달력, 대표 감정, 본문·복수 감정·직접 기간 조합 검색과 가상 결과 목록을 담당한다.
+- 기존 `JournalScreens.tsx`는 작성과 상세 책임만 유지하며 최근 30개 제한 목록과 단순 통계 코드는 제거됐다.
+- 현재 기능 패치노트는 2026-09-07 구현 기준으로 갱신됐다.
 
 ### Active Remaining Known Issues
 
-- 구현 전.
+- 실제 기기에서 달력 셀·직접 날짜 입력의 시각적 배치와 키보드 UX는 수동 검증하지 못했다.
+- 매우 긴 기간은 결과 렌더링은 가상화되지만 서버 응답 자체는 한 번에 전달되므로 사용자 기록이 장기간 누적되면 페이지네이션 검토가 필요하다.
+- 실제 PostgreSQL에서 범위 쿼리를 실행하지 못해 H2 통합 테스트와 기존 `(user_id, entry_date)` 인덱스 검토로 대체했다.
+- iOS Pod deployment target 및 빌드 스크립트 경고가 남지만 빌드는 성공한다.
 
 ### Active Chunk Commit History
 
 - `919ce9a` — Chunk 1: 사용자별 날짜 범위 조회 API, 날짜 검증, 범위·정렬·격리 통합 테스트.
 - `cbea31f` — Chunk 2: 공용 ISO 날짜 연산, 6주 월간 그리드, 기간·감정·본문 조합 필터와 단위 테스트.
-- Chunk 3 commit pending — 범위 로드·캐시 병합, 달력 탐색, 본문·감정·기간 필터 UI와 기존 목록 책임 분리.
+- `78bf55a` — Chunk 3: 범위 로드·캐시 병합, 달력 탐색, 본문·감정·기간 필터 UI와 기존 목록 책임 분리.
+- Chunk 4 commit pending — 현재 기능 패치노트와 최종 검증 State Store.
 
 ### Active Validation Logs
 
@@ -77,6 +83,7 @@
 - Chunk 1: 서버 Gradle 테스트 17개 및 서버 diff 검사 통과.
 - Chunk 2: 앱 Vitest 25개 테스트, TypeScript 검사 및 앱 diff 검사 통과.
 - Chunk 3: 앱 Vitest 26개 테스트, TypeScript 검사, Android Debug 빌드, iOS Simulator Debug 전체 빌드 및 앱 diff 검사 통과.
+- Final: 서버 Gradle 테스트 17개, 앱 Vitest 26개, TypeScript 검사, Android Debug 전체·증분 빌드, iOS Simulator Debug 전체·증분 빌드, `git diff --check a58b449..HEAD` 통과.
 
 ### Active Review Reports
 
@@ -88,6 +95,24 @@
 - Chunk 3 정확성 검토 1회차: 조회 실패 재시도가 동일 state를 설정해 새 요청을 만들지 않는 문제를 reload sequence로 수정하고 범위 캐시 교체를 순수 함수·테스트로 고정.
 - Chunk 3 성능 검토 1회차: 긴 직접 기간에서 모든 결과를 즉시 렌더링하는 ScrollView를 FlatList 가상 목록으로 교체.
 - Chunk 3 보안·타입·접근성·유지보수 재검토: 계정 전환 응답 차단, operation overlay, 선택 상태 노출, 화면 책임 분리와 obsolete 최근 30개 목록 제거를 확인. 추가 필수 이슈 없음.
+- Final 정확성·보안 검토: 선택 월과 직접 기간의 조회 경계, 첫 감정 대표 표시, OR 필터, 본문 부분 검색, 사용자 격리와 동기화 상태 보존을 계약과 대조. 추가 필수 이슈 없음.
+- Final 구조·성능·dead-code 검토: 날짜 연산 단일화, 서버/컨텍스트/도메인/UI 책임 경계, 가상 결과 목록, 구형 목록·통계 제거와 새 순환 의존성 부재를 확인. 추가 필수 이슈 없음.
+
+### Active Final Validation Result
+
+- PASS — 월요일 시작 6주 월간 달력에서 이전·다음 달 이동, 기록 여부와 첫 번째 대표 감정을 표시한다.
+- PASS — 기록 날짜를 선택하면 기존 기록 상세 화면으로 이동한다.
+- PASS — 기본·직접 입력 감정의 복수 OR 필터와 본문 공백 제거·대소문자 무시 부분 검색을 제공한다.
+- PASS — 유효한 시작일·종료일이 선택 달을 대체하며 역전·불완전·실재하지 않는 날짜를 요청 전에 차단한다.
+- PASS — 감정·기간·본문 조건을 함께 적용하고 결과 수, 실제 범위, 전체 초기화와 빈 상태·재시도를 제공한다.
+- PASS — 인증 사용자 범위 조회와 owner 전환 차단을 적용하고 로컬·대기·실패·충돌 operation을 서버 결과 위에 유지한다.
+- PASS — 기존 일기 작성·상세·삭제·동기화와 마음 리포트 테스트 및 양 플랫폼 빌드가 회귀 없이 통과한다.
+- PASS — 현재 기능 패치노트를 갱신하고 대체된 최근 30개 목록·직접 통계·중복 날짜 연산을 제거했다.
+
+### Active Follow-up Candidates
+
+- 기록이 매우 장기간 누적된 이후 범위 API 페이지네이션 또는 서버측 검색 도입 여부를 사용량 기반으로 검토한다.
+- 직접 날짜 문자열 입력을 네이티브 날짜 선택기로 교체하는 UX 개선은 별도 범위로 검토한다.
 
 ---
 
