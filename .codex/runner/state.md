@@ -56,7 +56,7 @@
 
 ### Active Current Codebase Snapshot
 
-- 구현 HEAD: `78bf55a`; 이후 문서·최종 검증 State Store 커밋이 추가된다. 시작점은 `a58b449`, 브랜치는 `dev`.
+- 구현·문서 HEAD: `4b072f4`; 이후 완료 포인터 State Store 커밋이 추가된다. 시작점은 `a58b449`, 브랜치는 `dev`.
 - 서버는 기존 최근 history와 별도로 인증 사용자별 날짜 범위 조회를 제공한다.
 - 앱은 공용 ISO 달력 모듈과 UI 비의존 탐색 필터를 사용하고, 범위 서버 결과에 현재 owner의 journal operation을 overlay한다.
 - `RecordsScreen.tsx`는 월간 6주 달력, 대표 감정, 본문·복수 감정·직접 기간 조합 검색과 가상 결과 목록을 담당한다.
@@ -75,7 +75,7 @@
 - `919ce9a` — Chunk 1: 사용자별 날짜 범위 조회 API, 날짜 검증, 범위·정렬·격리 통합 테스트.
 - `cbea31f` — Chunk 2: 공용 ISO 날짜 연산, 6주 월간 그리드, 기간·감정·본문 조합 필터와 단위 테스트.
 - `78bf55a` — Chunk 3: 범위 로드·캐시 병합, 달력 탐색, 본문·감정·기간 필터 UI와 기존 목록 책임 분리.
-- Chunk 4 commit pending — 현재 기능 패치노트와 최종 검증 State Store.
+- `4b072f4` — Chunk 4: 현재 기능 패치노트와 최종 검증 State Store.
 
 ### Active Validation Logs
 
