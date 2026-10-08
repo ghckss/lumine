@@ -33,6 +33,7 @@ export function HomeScreen() {
   }), [journalRecords, referenceDate, screeningResults]);
   const weekDays = useMemo(() => listIsoDays(weeklyReport.currentRange.start, weeklyReport.fullPeriodEnd), [weeklyReport.currentRange.start, weeklyReport.fullPeriodEnd]);
   const byDate = useMemo(() => new Map(journalRecords.map((record) => [record.date, record])), [journalRecords]);
+  const hasTodayRecord = byDate.has(referenceDate);
   const recent = journalRecords.slice(0, 3);
   const lastScreeningDays = screeningResults[0]
     ? Math.floor((Date.now() - new Date(screeningResults[0].completedDate).getTime()) / 86400000)
@@ -95,9 +96,9 @@ export function HomeScreen() {
         ) : null}
 
         <View style={styles.quickRow}>
-          <Pressable onPress={() => navigate("diary")} style={({ pressed }) => [styles.quickCard, pressed && styles.pressed]}>
+          {!hasTodayRecord ? <Pressable onPress={() => navigate("diary")} style={({ pressed }) => [styles.quickCard, pressed && styles.pressed]}>
             <Text style={styles.quickIcon}>✍️</Text><Text style={styles.quickTitle}>감정 일기</Text><Text style={styles.quickBody}>오늘의 감정을 기록해요</Text>
-          </Pressable>
+          </Pressable> : null}
           <Pressable onPress={() => navigate("check-start")} style={({ pressed }) => [styles.quickCard, styles.quickTint, pressed && styles.pressed]}>
             <Text style={styles.quickIcon}>💜</Text><Text style={[styles.quickTitle, { color: tokens.primaryDark }]}>마음 확인</Text><Text style={styles.quickBody}>내 마음 상태 체크</Text>
           </Pressable>
