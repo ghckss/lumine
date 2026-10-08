@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { AppState } from "react-native";
 import NetInfo from "@react-native-community/netinfo";
 import { api, toJournalRecord } from "../lib/api";
+import { localIsoDate, monthRange } from "../lib/calendar-date";
 import { processJournalOperations, type JournalSyncResult } from "../lib/journal-sync";
 import { replaceJournalRange } from "../lib/journal-explorer";
 import { contentCacheKeys, loadDeviceCache, removeDeviceCache, saveDeviceCache } from "../storage/device-cache";
@@ -23,6 +24,8 @@ const LEGACY_JOURNAL_CACHE_KEY = "native.journal.records";
 const LEGACY_SCREENING_CACHE_KEY = "native.screening.results";
 export const STACK_TRANSITION_MS = 280;
 
+type RecordsViewState = { selectedMonth: string; selectedDate: string | null };
+
 type AppContextValue = {
   isGuest: boolean;
   isLoading: boolean;
@@ -33,6 +36,8 @@ type AppContextValue = {
   journalOwner: string;
   pendingJournalDeletion: { record: JournalRecord; expiresAt: string } | null;
   screeningResults: ScreeningResult[];
+  recordsViewState: RecordsViewState;
+  updateRecordsViewState: (next: Partial<RecordsViewState>) => void;
   navigate: (page: PageName, params?: Record<string, unknown>) => void;
   goBack: () => void;
   resetTo: (page: PageName, params?: Record<string, unknown>) => void;
@@ -65,7 +70,20 @@ export function AppProvider({ children, isGuest }: { children: React.ReactNode; 
   const queueWriteInFlight = useRef<Promise<void> | null>(null);
   const [pendingJournalDeletion, setPendingJournalDeletion] = useState<{ record: JournalRecord; expiresAt: string } | null>(null);
   const [screeningResults, setScreeningResults] = useState<ScreeningResult[]>([]);
+  const [recordsViewState, setRecordsViewState] = useState<RecordsViewState>(() => {
+    const today = localIsoDate();
+    return { selectedMonth: monthRange(today).start, selectedDate: today };
+  });
   const [isLoading, setIsLoading] = useState(true);
+
+  const updateRecordsViewState = useCallback((next: Partial<RecordsViewState>) => {
+    setRecordsViewState((current) => ({ ...current, ...next }));
+  }, []);
+
+  useEffect(() => {
+    const today = localIsoDate();
+    setRecordsViewState({ selectedMonth: monthRange(today).start, selectedDate: today });
+  }, [cacheOwner]);
 
   const persist = useCallback(async (journals: JournalRecord[], screenings: ScreeningResult[]) => {
     await Promise.all([
@@ -419,6 +437,8 @@ export function AppProvider({ children, isGuest }: { children: React.ReactNode; 
     journalRecords,
     loadJournalRange,
     screeningResults,
+    recordsViewState,
+    updateRecordsViewState,
     navigate,
     goBack,
     resetTo,
@@ -428,7 +448,7 @@ export function AppProvider({ children, isGuest }: { children: React.ReactNode; 
     undoJournalDelete,
     saveScreening,
     clearContent
-  }), [backTransitionKey, cacheOwner, clearContent, deleteJournal, goBack, isGuest, isLoading, journalRecords, loadJournalRange, navigate, pendingJournalDeletion, resetTo, retryJournal, saveJournal, saveScreening, screeningResults, stack, undoJournalDelete]);
+  }), [backTransitionKey, cacheOwner, clearContent, deleteJournal, goBack, isGuest, isLoading, journalRecords, loadJournalRange, navigate, pendingJournalDeletion, recordsViewState, resetTo, retryJournal, saveJournal, saveScreening, screeningResults, stack, undoJournalDelete, updateRecordsViewState]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

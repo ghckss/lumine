@@ -10,10 +10,9 @@ import { getEmotionColor, type JournalRecord } from "../../types/content";
 const weekdays = ["월", "화", "수", "목", "금", "토", "일"];
 
 export function RecordsScreen() {
-  const { goBack, journalRecords, loadJournalRange, navigate, resetTo, stack } = useApp();
+  const { goBack, journalRecords, loadJournalRange, navigate, recordsViewState, resetTo, stack, updateRecordsViewState } = useApp();
   const today = localIsoDate();
-  const [selectedMonth, setSelectedMonth] = useState(monthRange(today).start);
-  const [selectedDate, setSelectedDate] = useState<string | null>(today);
+  const { selectedMonth, selectedDate } = recordsViewState;
   const [pickerVisible, setPickerVisible] = useState(false);
   const [pickerYear, setPickerYear] = useState(Number(today.slice(0, 4)));
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -38,8 +37,10 @@ export function RecordsScreen() {
 
   function selectMonth(month: string) {
     const nextMonth = monthRange(month).start;
-    setSelectedMonth(nextMonth);
-    setSelectedDate(today >= monthRange(nextMonth).start && today <= monthRange(nextMonth).end ? today : null);
+    updateRecordsViewState({
+      selectedMonth: nextMonth,
+      selectedDate: today >= monthRange(nextMonth).start && today <= monthRange(nextMonth).end ? today : null
+    });
   }
 
   function openMonthPicker() {
@@ -89,7 +90,7 @@ export function RecordsScreen() {
                   accessibilityLabel={record ? `${day.date}, ${record.emotions[0]} 기록 ${dayRecords.length}개` : `${day.date}, 기록 없음`}
                   accessibilityState={{ selected, disabled: !day.inMonth }}
                   disabled={!day.inMonth}
-                  onPress={() => setSelectedDate(day.date)}
+                  onPress={() => updateRecordsViewState({ selectedDate: day.date })}
                   style={[styles.dayCell, !day.inMonth && styles.outsideDay, selected && styles.selectedDay]}
                 >
                   <Text style={[styles.dayNumber, day.date === today && styles.todayNumber, selected && styles.selectedDayNumber]}>{day.day}</Text>
