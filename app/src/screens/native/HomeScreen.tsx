@@ -12,6 +12,11 @@ function monthDay(isoDate: string) {
   return `${month}/${day}`;
 }
 
+function koreanShortDate(isoDate: string) {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  return `${year}년 ${month}월 ${day}일`;
+}
+
 function greeting() {
   const hour = new Date().getHours();
   if (hour < 6) return "잠 못 드는 밤이네요";
@@ -35,8 +40,9 @@ export function HomeScreen() {
   const byDate = useMemo(() => new Map(journalRecords.map((record) => [record.date, record])), [journalRecords]);
   const hasTodayRecord = byDate.has(referenceDate);
   const recent = journalRecords.slice(0, 3);
-  const lastScreeningDays = screeningResults[0]
-    ? Math.floor((Date.now() - new Date(screeningResults[0].completedDate).getTime()) / 86400000)
+  const latestScreening = screeningResults.reduce((latest, result) => !latest || result.completedDate > latest.completedDate ? result : latest, screeningResults[0]);
+  const lastScreeningDays = latestScreening
+    ? Math.floor((Date.now() - new Date(latestScreening.completedDate).getTime()) / 86400000)
     : Number.POSITIVE_INFINITY;
   const showScreeningReminder = screeningResults.length === 0 || lastScreeningDays >= 30;
   const topEmotions = weeklyReport.topEmotions.map((item) => item.emotion);
@@ -100,7 +106,7 @@ export function HomeScreen() {
             <Text style={styles.quickIcon}>✍️</Text><Text style={styles.quickTitle}>감정 일기</Text><Text style={styles.quickBody}>오늘의 감정을 기록해요</Text>
           </Pressable> : null}
           <Pressable onPress={() => navigate("check-start")} style={({ pressed }) => [styles.quickCard, styles.quickTint, pressed && styles.pressed]}>
-            <Text style={styles.quickIcon}>💜</Text><Text style={[styles.quickTitle, { color: tokens.primaryDark }]}>마음 확인</Text><Text style={styles.quickBody}>내 마음 상태 체크</Text>
+            <Text style={styles.quickIcon}>💜</Text><Text style={[styles.quickTitle, { color: tokens.primaryDark }]}>마음 확인</Text><Text style={styles.quickBody}>{latestScreening ? `최근 검사일 ${koreanShortDate(latestScreening.completedDate)}` : "내 마음 상태 체크"}</Text>
           </Pressable>
         </View>
 
