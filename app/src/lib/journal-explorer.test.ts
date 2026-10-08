@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { JournalRecord } from "../types/content";
 import { buildMonthGrid, monthRange, shiftMonth } from "./calendar-date";
-import { collectEmotionOptions, effectiveDateRange, filterJournalRecords, replaceJournalRange, validateDateRange } from "./journal-explorer";
+import { groupJournalRecordsByDate, replaceJournalRange } from "./journal-explorer";
 
-function journal(date: string, emotions: string[], body = ""): JournalRecord {
-  return { id: `journal:${date}`, date, emotions, body, comfortMessage: "", createdAt: `${date}T00:00:00Z`, version: 0, syncStatus: "synced" };
+function journal(date: string, emotions: string[], body = "", suffix = ""): JournalRecord {
+  return { id: `journal:${date}${suffix}`, date, emotions, body, comfortMessage: "", createdAt: `${date}T0${suffix || "0"}:00:00Z`, version: 0, syncStatus: "synced" };
 }
 
 describe("calendar dates", () => {
@@ -29,35 +29,11 @@ describe("journal explorer", () => {
     journal("2026-08-31", ["평온"], "산책은 좋았다")
   ];
 
-  it("validates incomplete, invalid and reversed periods", () => {
-    expect(validateDateRange("", "")).toBeNull();
-    expect(validateDateRange("2026-09-01", "")).toContain("모두");
-    expect(validateDateRange("2026-02-30", "2026-03-01")).toContain("형식");
-    expect(validateDateRange("2026-09-03", "2026-09-01")).toContain("늦을");
-  });
-
-  it("uses a valid custom range instead of the selected month", () => {
-    expect(effectiveDateRange("2026-09-01", "2026-08-20", "2026-09-02")).toEqual({ start: "2026-08-20", end: "2026-09-02" });
-    expect(effectiveDateRange("2026-09-01", "", "")).toEqual({ start: "2026-09-01", end: "2026-09-30" });
-  });
-
-  it("combines range, emotion OR and case-insensitive trimmed body search", () => {
-    const result = filterJournalRecords(records, { start: "2026-09-01", end: "2026-09-30" }, {
-      emotions: ["평온", "불안"],
-      query: "  산책 "
-    });
-    expect(result.map((record) => record.date)).toEqual(["2026-09-03"]);
-  });
-
-  it("matches any selected emotion and removes duplicate dates", () => {
-    const result = filterJournalRecords([...records, journal("2026-09-03", ["불안"], "중복")], { start: "2026-09-01", end: "2026-09-30" }, {
-      emotions: ["불안", "홀가분"], query: ""
-    });
-    expect(result.map((record) => record.date)).toEqual(["2026-09-03", "2026-09-02"]);
-  });
-
-  it("includes custom emotions after preferred present emotions", () => {
-    expect(collectEmotionOptions(records, ["기쁨", "평온", "불안"])).toEqual(["평온", "불안", "홀가분"]);
+  it("groups only records in the selected month and preserves same-day entries", () => {
+    const duplicate = journal("2026-09-03", ["불안"], "두 번째 기록", "1");
+    const grouped = groupJournalRecordsByDate([...records, duplicate], { start: "2026-09-01", end: "2026-09-30" });
+    expect([...grouped.keys()]).toEqual(["2026-09-03", "2026-09-02"]);
+    expect(grouped.get("2026-09-03")?.map((record) => record.id)).toEqual([duplicate.id, "journal:2026-09-03"]);
   });
 
   it("replaces only the fetched range and preserves records outside it", () => {
