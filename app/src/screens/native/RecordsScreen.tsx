@@ -71,7 +71,7 @@ export function RecordsScreen() {
           <View style={styles.monthHeader}>
             <Pressable accessibilityRole="button" accessibilityLabel="이전 달" onPress={() => selectMonth(shiftMonth(selectedMonth, -1))} style={styles.monthButton}><Text style={styles.monthArrow}>‹</Text></Pressable>
             <View style={styles.monthTitleGroup}>
-              <Pressable accessibilityRole="button" accessibilityLabel={`${monthLabel(selectedMonth)} 연도와 월 선택`} accessibilityState={{ expanded: pickerVisible }} onPress={openMonthPicker} style={styles.monthTitleButton}><Text style={styles.monthTitle}>{monthLabel(selectedMonth)}⌄</Text></Pressable>
+              <Pressable accessibilityRole="button" accessibilityLabel={`${monthLabel(selectedMonth)} 연도와 월 선택`} accessibilityState={{ expanded: pickerVisible }} onPress={openMonthPicker} style={styles.monthTitleButton}><Text style={styles.monthTitle}>{monthLabel(selectedMonth)}</Text></Pressable>
               <Pressable accessibilityRole="button" accessibilityLabel="오늘로 이동" onPress={() => selectMonth(today)}><Text style={styles.todayLink}>오늘</Text></Pressable>
             </View>
             <Pressable accessibilityRole="button" accessibilityLabel="다음 달" onPress={() => selectMonth(shiftMonth(selectedMonth, 1))} style={styles.monthButton}><Text style={styles.monthArrow}>›</Text></Pressable>
@@ -135,16 +135,30 @@ function MonthPicker({ visible, year, selectedMonth, onChangeYear, onClose, onSe
   onClose: () => void;
   onSelect: (month: string) => void;
 }) {
+  const [view, setView] = useState<"months" | "years">("months");
+  const selectedYear = Number(selectedMonth.slice(0, 4));
+  const yearOptions = Array.from({ length: 9 }, (_, index) => year - 4 + index);
+
+  useEffect(() => {
+    if (visible) setView("months");
+  }, [visible]);
+
+  const moveYearPage = (direction: -1 | 1) => onChangeYear(year + direction * (view === "years" ? 9 : 1));
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
         <Card style={styles.pickerCard}>
           <View style={styles.pickerYearRow}>
-            <Pressable accessibilityRole="button" accessibilityLabel="이전 연도" onPress={() => onChangeYear(year - 1)} style={styles.pickerYearButton}><Text style={styles.pickerYearArrow}>‹</Text></Pressable>
-            <Text accessibilityRole="header" style={styles.pickerYear}>{year}년</Text>
-            <Pressable accessibilityRole="button" accessibilityLabel="다음 연도" onPress={() => onChangeYear(year + 1)} style={styles.pickerYearButton}><Text style={styles.pickerYearArrow}>›</Text></Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel={view === "years" ? "이전 연도 범위" : "이전 연도"} onPress={() => moveYearPage(-1)} style={styles.pickerYearButton}><Text style={styles.pickerYearArrow}>‹</Text></Pressable>
+            {view === "months" ? (
+              <Pressable accessibilityRole="button" accessibilityLabel={`${year}년, 연도 선택 열기`} onPress={() => setView("years")} style={styles.pickerYearTitleButton}>
+                <Text style={styles.pickerYear}>{year}년</Text>
+              </Pressable>
+            ) : <Text accessibilityRole="header" style={styles.pickerYear}>{yearOptions[0]}–{yearOptions[8]}년</Text>}
+            <Pressable accessibilityRole="button" accessibilityLabel={view === "years" ? "다음 연도 범위" : "다음 연도"} onPress={() => moveYearPage(1)} style={styles.pickerYearButton}><Text style={styles.pickerYearArrow}>›</Text></Pressable>
           </View>
-          <View style={styles.pickerMonths}>
+          {view === "months" ? <View style={styles.pickerMonths}>
             {Array.from({ length: 12 }, (_, index) => index + 1).map((month) => {
               const value = `${year}-${String(month).padStart(2, "0")}-01`;
               const selected = value === selectedMonth;
@@ -161,7 +175,23 @@ function MonthPicker({ visible, year, selectedMonth, onChangeYear, onClose, onSe
                 </Pressable>
               );
             })}
-          </View>
+          </View> : <View style={styles.pickerYears}>
+            {yearOptions.map((option) => {
+              const selected = option === selectedYear;
+              return (
+                <Pressable
+                  key={option}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${option}년 선택`}
+                  accessibilityState={{ selected }}
+                  onPress={() => { onChangeYear(option); setView("months"); }}
+                  style={({ pressed }) => [styles.pickerYearOption, selected && styles.pickerMonthSelected, pressed && styles.pressed]}
+                >
+                  <Text style={[styles.pickerMonthText, selected && styles.pickerMonthTextSelected]}>{option}년</Text>
+                </Pressable>
+              );
+            })}
+          </View>}
           <Pressable accessibilityRole="button" accessibilityLabel="연도와 월 선택 닫기" onPress={onClose} style={styles.pickerClose}><Text style={styles.pickerCloseText}>닫기</Text></Pressable>
         </Card>
       </View>
@@ -228,8 +258,11 @@ const styles = StyleSheet.create({
   pickerYearRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   pickerYearButton: { width: 48, height: 48, alignItems: "center", justifyContent: "center" },
   pickerYearArrow: { color: tokens.primary, fontSize: 30 },
+  pickerYearTitleButton: { minHeight: 48, minWidth: 120, alignItems: "center", justifyContent: "center" },
   pickerYear: { ...typography.title, fontSize: 20 },
   pickerMonths: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  pickerYears: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  pickerYearOption: { width: "31%", minHeight: 52, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: tokens.outline, borderRadius: 12 },
   pickerMonth: { width: "22%", minHeight: 44, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: tokens.outline, borderRadius: 12 },
   pickerMonthSelected: { backgroundColor: tokens.primary, borderColor: tokens.primary },
   pickerMonthText: { color: tokens.text, fontSize: 14, fontWeight: "600" },
