@@ -34,6 +34,7 @@ export function RecordsScreen() {
 
   const recordsByDate = useMemo(() => groupJournalRecordsByDate(journalRecords, calendarRange), [calendarRange, journalRecords]);
   const selectedRecords = selectedDate ? recordsByDate.get(selectedDate) ?? [] : [];
+  const hasTodayRecord = journalRecords.some((record) => record.date === today);
 
   function selectMonth(month: string) {
     const nextMonth = monthRange(month).start;
@@ -63,7 +64,7 @@ export function RecordsScreen() {
         ListHeaderComponent={<>
         <View style={styles.header}>
           <View><Text style={typography.title}>내 마음기록</Text><Text style={typography.caption}>달력에서 날짜를 선택해 기록을 확인하세요.</Text></View>
-          <Pressable accessibilityRole="button" onPress={() => navigate("diary")} style={styles.newButton}><Text style={styles.newButtonText}>＋ 새 기록</Text></Pressable>
+          {!hasTodayRecord ? <Pressable accessibilityRole="button" onPress={() => navigate("diary")} style={styles.newButton}><Text style={styles.newButtonText}>＋ 새 기록</Text></Pressable> : null}
         </View>
 
         <Card style={styles.calendarCard}>
