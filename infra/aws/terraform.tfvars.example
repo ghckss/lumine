@@ -1,0 +1,14 @@
+aws_region              = "ap-northeast-2"
+project_name            = "lumine"
+environment             = "production"
+github_oidc_subject     = "repo:ghckss/lumine:environment:production"
+jwt_secret_arn          = "arn:aws:secretsmanager:ap-northeast-2:123456789012:secret:lumine/production/jwt-XXXXXX"
+google_client_ids       = "your-google-web-client-id.apps.googleusercontent.com"
+kakao_app_ids           = "123456"
+create_apprunner_service = false
+
+# Optional. When omitted, the server uses its rule-based message generator.
+# openai_api_key_secret_arn = "arn:aws:secretsmanager:ap-northeast-2:123456789012:secret:lumine/production/openai-XXXXXX"
+
+# If the AWS account already has the GitHub OIDC provider, set it here.
+# github_oidc_provider_arn = "arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com"

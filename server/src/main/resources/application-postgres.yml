@@ -4,9 +4,12 @@ spring:
     username: ${DB_USERNAME:lumine}
     password: ${DB_PASSWORD:lumine}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${DB_MAX_POOL_SIZE:5}
+      minimum-idle: ${DB_MIN_IDLE:1}
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     open-in-view: false
   flyway:
     enabled: true

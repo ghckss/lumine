@@ -1,38 +1,110 @@
-name: Deploy
+name: Deploy server to AWS
 
 on:
   push:
     branches:
-      - block
+      - master
+    paths:
+      - "server/**"
+      - "scripts/deploy-server.sh"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
 
 permissions:
-  id-token: write
   contents: read
+  id-token: write
+
+concurrency:
+  group: production-server
+  cancel-in-progress: false
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
   AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
-  EKS_CLUSTER_NAME: ${{ vars.EKS_CLUSTER_NAME }}
   ECR_SERVER_REPOSITORY: ${{ vars.ECR_SERVER_REPOSITORY }}
-  K8S_NAMESPACE_SERVER: ${{ vars.K8S_NAMESPACE_SERVER }}
-  API_HOST: ${{ vars.API_HOST }}
-  IMAGE_TAG: ${{ github.sha }}
+  APP_RUNNER_SERVICE_ARN: ${{ vars.AWS_APPRUNNER_SERVICE_ARN }}
 
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: "8.10.2"
+
+      - name: Test server
+        run: gradle test
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Configure AWS credentials with OIDC
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+          role-session-name: lumine-${{ github.run_id }}
 
-      - name: Setup kubectl
-        uses: azure/setup-kubectl@v4
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Deploy server
-        run: ./scripts/deploy-server.sh
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push server image
+        uses: docker/build-push-action@v6
+        with:
+          context: server
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_SERVER_REPOSITORY }}:${{ github.sha }}
+            ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_SERVER_REPOSITORY }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Start App Runner deployment
+        id: deploy
+        run: |
+          operation_id=$(aws apprunner start-deployment \
+            --service-arn "$APP_RUNNER_SERVICE_ARN" \
+            --query OperationId \
+            --output text)
+          echo "operation_id=$operation_id" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for App Runner deployment
+        env:
+          OPERATION_ID: ${{ steps.deploy.outputs.operation_id }}
+        run: |
+          for attempt in $(seq 1 40); do
+            status=$(aws apprunner list-operations \
+              --service-arn "$APP_RUNNER_SERVICE_ARN" \
+              --query "OperationSummaryList[?Id=='$OPERATION_ID'].Status | [0]" \
+              --output text)
+            echo "App Runner deployment status: $status"
+            case "$status" in
+              SUCCEEDED) exit 0 ;;
+              FAILED|ROLLBACK_SUCCEEDED|ROLLBACK_FAILED) exit 1 ;;
+            esac
+            sleep 15
+          done
+          echo "Timed out waiting for App Runner deployment."
+          exit 1

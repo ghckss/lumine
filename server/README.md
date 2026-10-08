@@ -82,3 +82,8 @@ Google은 앱이 전달한 `idToken`을 `https://oauth2.googleapis.com/tokeninfo
 - `GET http://localhost:8080/api/screening/questionnaire`
 - `GET http://localhost:8080/api/journal/entries/history?limit=10`
 - `GET http://localhost:8080/api/support/resources`
+- `GET http://localhost:8080/actuator/health`
+
+## 운영 배포
+
+운영 서버는 ECR 이미지와 AWS App Runner를 사용한다. RDS, VPC, Secrets Manager 및 GitHub Actions OIDC 설정은 [`../docs/aws-deployment.md`](../docs/aws-deployment.md)를 따른다.

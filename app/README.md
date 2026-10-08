@@ -35,8 +35,8 @@ iOS 최초 실행 시 `bundle exec pod install`이 필요합니다.
 - `ios/LumineNativeShell/Info.plist`
 - `android/app/src/main/res/values/strings.xml`
 
-개발 기본값은 mock social login fallback입니다. 실서비스에서는 provider 키와 URL scheme을 설정하고 `enableMockSocialLogin`을 비활성화해야 합니다.
+개발 빌드에서만 mock social login fallback이 활성화된다. Release 빌드는 실제 provider 로그인을 사용하므로 스토어 배포 전에 provider 키와 URL scheme을 확인해야 한다.
 
 ## API
 
-iOS 시뮬레이터는 `localhost:8080`, Android 에뮬레이터는 `10.0.2.2:8080`을 사용합니다. 설정은 `src/config/env.ts`에 있습니다.
+iOS 시뮬레이터는 `localhost:8080`, Android 에뮬레이터는 `10.0.2.2:8080`을 사용합니다. Release 번들은 빌드 시 `LUMINE_API_BASE_URL` 환경변수에 HTTPS 주소가 있어야 하며, GitHub Actions에서는 같은 이름의 Repository Variable을 사용합니다. 설정은 `src/config/env.ts`에 있습니다.

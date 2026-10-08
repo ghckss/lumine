@@ -22,6 +22,17 @@ spring:
 server:
   port: 8080
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+
 openai:
   api-key: ${OPENAI_API_KEY:}
   model: ${OPENAI_MODEL:gpt-5.2}
@@ -34,7 +45,7 @@ auth:
     issuer: ${AUTH_JWT_ISSUER:lumine}
     access-token-ttl-seconds: ${AUTH_JWT_ACCESS_TOKEN_TTL_SECONDS:2592000}
   google:
-    client-ids: 56571786840-vqvqk71u9ut1tb5j0fbv5pv05pcia3v5.apps.googleusercontent.com
+    client-ids: ${GOOGLE_CLIENT_IDS:56571786840-vqvqk71u9ut1tb5j0fbv5pv05pcia3v5.apps.googleusercontent.com}
     token-info-url: ${GOOGLE_TOKEN_INFO_URL:https://oauth2.googleapis.com/tokeninfo}
   kakao:
     app-ids: ${KAKAO_APP_IDS:}

@@ -6,6 +6,9 @@ on:
       - block
   workflow_dispatch:
 
+env:
+  LUMINE_API_BASE_URL: ${{ vars.LUMINE_API_BASE_URL }}
+
 jobs:
   android-artifact:
     runs-on: ubuntu-latest
@@ -34,6 +37,13 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Validate production API URL
+        run: |
+          case "$LUMINE_API_BASE_URL" in
+            https://*) ;;
+            *) echo "LUMINE_API_BASE_URL must be an HTTPS URL"; exit 1 ;;
+          esac
 
       - name: Decode Android keystore
         if: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 != '' }}
@@ -78,6 +88,13 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Validate production API URL
+        run: |
+          case "$LUMINE_API_BASE_URL" in
+            https://*) ;;
+            *) echo "LUMINE_API_BASE_URL must be an HTTPS URL"; exit 1 ;;
+          esac
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1

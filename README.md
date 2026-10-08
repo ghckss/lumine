@@ -29,6 +29,8 @@ npm run dev:all
 
 ## Deploy
 
+서버 운영 구성은 AWS App Runner, ECR, RDS PostgreSQL, Secrets Manager와 GitHub Actions OIDC를 사용한다. 최초 인프라 생성과 GitHub 설정은 [`docs/aws-deployment.md`](docs/aws-deployment.md)를 따른다.
+
 스토어 아티팩트:
 - `npm run artifact:android`
 - `npm run artifact:ios`
@@ -39,9 +41,9 @@ npm run dev:all
 - `npm run deploy:all`
 
 GitHub Actions:
-- `master` 브랜치 push 시 `.github/workflows/deploy.yml` 실행
-- 필요 변수: `AWS_REGION`, `AWS_ACCOUNT_ID`, `EKS_CLUSTER_NAME`, `ECR_SERVER_REPOSITORY`, `K8S_NAMESPACE_SERVER`, `API_HOST`
-- 필요 시크릿: `AWS_ROLE_ARN`
+- `master` 브랜치의 서버 관련 변경 시 `.github/workflows/deploy.yml` 실행
+- 필요 변수: `AWS_REGION`, `AWS_ACCOUNT_ID`, `ECR_SERVER_REPOSITORY`, `AWS_APPRUNNER_SERVICE_ARN`, `LUMINE_API_BASE_URL`
+- `production` Environment 시크릿: `AWS_ROLE_ARN`
 
 ## Structure
 

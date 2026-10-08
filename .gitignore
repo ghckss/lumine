@@ -20,3 +20,10 @@ server/build
 .env
 .env.local
 .env.*.local
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
