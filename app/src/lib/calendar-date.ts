@@ -63,7 +63,9 @@ export function buildMonthGrid(monthDate: string): CalendarDay[] {
   const range = monthRange(monthDate);
   const first = parseIsoDate(range.start)!;
   const mondayOffset = (first.getUTCDay() + 6) % 7;
-  return Array.from({ length: 42 }, (_, index) => {
+  const daysInMonth = parseIsoDate(range.end).getUTCDate();
+  const cellCount = Math.ceil((mondayOffset + daysInMonth) / 7) * 7;
+  return Array.from({ length: cellCount }, (_, index) => {
     const date = addDays(first, index - mondayOffset);
     const iso = formatIsoDate(date);
     return { date: iso, day: date.getUTCDate(), inMonth: iso >= range.start && iso <= range.end };

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { BottomTabs, Card, EmotionChip, Page, TopBar, typography } from "../../components/NativeUI";
 import { tokens } from "../../config/tokens";
 import { useApp } from "../../context/AppContext";
@@ -56,13 +56,7 @@ export function RecordsScreen() {
   return (
     <Page>
       <TopBar title="마음기록 전체보기" onBack={handleBack} />
-      <FlatList
-        data={selectedRecords}
-        keyExtractor={(record) => record.id}
-        renderItem={({ item }) => <RecordRow record={item} onPress={() => navigate("record-detail", { recordId: item.id })} />}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        ListHeaderComponent={<>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View><Text style={typography.title}>내 마음기록</Text><Text style={typography.caption}>달력에서 날짜를 선택해 기록을 확인하세요.</Text></View>
           {!hasTodayRecord ? <Pressable accessibilityRole="button" onPress={() => navigate("diary")} style={styles.newButton}><Text style={styles.newButtonText}>＋ 새 기록</Text></Pressable> : null}
@@ -94,26 +88,20 @@ export function RecordsScreen() {
                   style={[styles.dayCell, !day.inMonth && styles.outsideDay, selected && styles.selectedDay]}
                 >
                   <Text style={[styles.dayNumber, day.date === today && styles.todayNumber, selected && styles.selectedDayNumber]}>{day.day}</Text>
-                  {record ? <View style={[styles.emotionMark, { backgroundColor: `${getEmotionColor(record.emotions[0])}55`, borderColor: getEmotionColor(record.emotions[0]) }]}><Text numberOfLines={1} style={styles.emotionMarkText}>{record.emotions[0]}</Text></View> : null}
+                  {record ? <View accessibilityElementsHidden style={[styles.emotionDot, { backgroundColor: getEmotionColor(record.emotions[0]) }]} /> : null}
                 </Pressable>
               );
             })}
           </View>
         </Card>
 
-        <View style={styles.resultHeader}>
-          <View><Text style={typography.section}>{selectedDate ? koreanDate(selectedDate) : "날짜를 선택해 주세요"}</Text><Text style={typography.caption}>{selectedDate ? `기록 ${selectedRecords.length}개` : monthLabel(selectedMonth)}</Text></View>
-          {isLoadingRange ? <ActivityIndicator color={tokens.primary} /> : null}
-        </View>
         {loadError ? <Pressable accessibilityRole="button" onPress={() => setReloadKey((value) => value + 1)} style={styles.loadError}><Text style={styles.errorText}>{loadError}</Text><Text style={styles.retryText}>다시 불러오기</Text></Pressable> : null}
-        </>}
-        ListEmptyComponent={(
-          <View style={styles.empty}>
-            <Text style={styles.emptyEmoji}>🗓️</Text>
-            <Text style={typography.section}>{selectedDate ? "이 날짜에는 기록이 없어요" : "확인할 날짜를 선택해 주세요"}</Text>
-            <Text style={[typography.muted, styles.center]}>{selectedDate === today ? "오늘의 마음을 기록하면 이곳에서 바로 확인할 수 있어요." : "기록이 표시된 날짜를 선택해 지난 마음을 돌아보세요."}</Text>
-          </View>
-        )}
+      </ScrollView>
+      <SelectedDatePreview
+        selectedDate={selectedDate}
+        records={selectedRecords}
+        isLoading={isLoadingRange}
+        onOpen={(recordId) => navigate("record-detail", { recordId })}
       />
       <MonthPicker
         visible={pickerVisible}
@@ -125,6 +113,44 @@ export function RecordsScreen() {
       />
       <BottomTabs />
     </Page>
+  );
+}
+
+function SelectedDatePreview({ selectedDate, records, isLoading, onOpen }: {
+  selectedDate: string | null;
+  records: JournalRecord[];
+  isLoading: boolean;
+  onOpen: (recordId: string) => void;
+}) {
+  return (
+    <View style={styles.previewDock}>
+      <View style={styles.previewHeader}>
+        <View>
+          <Text style={styles.previewDate}>{selectedDate ? koreanDate(selectedDate) : "날짜를 선택해 주세요"}</Text>
+          <Text style={typography.caption}>{selectedDate ? `기록 ${records.length}개` : "선택한 날짜의 기록이 여기에 표시돼요"}</Text>
+        </View>
+        {isLoading ? <ActivityIndicator color={tokens.primary} /> : null}
+      </View>
+      {records.length ? (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.previewList}>
+          {records.map((record) => (
+            <Pressable key={record.id} accessibilityRole="button" accessibilityLabel={`${record.date} 기록 상세 보기`} onPress={() => onOpen(record.id)} style={({ pressed }) => [styles.previewCard, pressed && styles.pressed]}>
+              <View style={styles.previewMeta}>
+                <View style={styles.previewEmotions}>{record.emotions.map((emotion) => <EmotionChip key={emotion} emotion={emotion} />)}</View>
+                {record.syncStatus !== "synced" ? <Text style={styles.syncBadge}>{syncLabel(record.syncStatus)}</Text> : null}
+              </View>
+              <Text style={styles.previewBody} numberOfLines={2}>{record.body || "본문 없이 감정만 기록했어요."}</Text>
+              <Text style={styles.previewLink}>상세 보기 ›</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      ) : (
+        <View style={styles.previewEmpty}>
+          <Text style={styles.previewEmptyIcon}>🗓️</Text>
+          <Text style={typography.muted}>{selectedDate ? "이 날짜에는 기록이 없어요." : "달력에서 날짜를 선택해 주세요."}</Text>
+        </View>
+      )}
+    </View>
   );
 }
 
@@ -200,28 +226,17 @@ function MonthPicker({ visible, year, selectedMonth, onChangeYear, onClose, onSe
   );
 }
 
-function RecordRow({ record, onPress }: { record: JournalRecord; onPress: () => void }) {
-  return (
-    <Pressable accessibilityRole="button" accessibilityLabel={`${record.date} 기록 보기`} onPress={onPress} style={({ pressed }) => [styles.record, pressed && styles.pressed]}>
-      <View style={styles.dateSide}><Text style={styles.dateNumber}>{Number(record.date.slice(-2))}</Text><View style={[styles.dot, { backgroundColor: getEmotionColor(record.emotions[0]) }]} /></View>
-      <View style={styles.recordMain}><View style={styles.recordChips}>{record.emotions.map((emotion) => <EmotionChip key={emotion} emotion={emotion} />)}</View><Text style={styles.recordText}>{record.body || "본문 없음"}</Text><Text style={typography.caption}>{koreanDate(record.date)}</Text></View>
-      {record.syncStatus !== "synced" ? <Text style={styles.syncBadge}>{syncLabel(record.syncStatus)}</Text> : null}
-      <Text style={styles.arrow}>›</Text>
-    </Pressable>
-  );
-}
-
 function monthLabel(value: string) { const [year, month] = value.split("-").map(Number); return `${year}년 ${month}월`; }
 function koreanDate(value: string) { const [year, month, day] = value.split("-").map(Number); return `${year}년 ${month}월 ${day}일`; }
 function syncLabel(status: JournalRecord["syncStatus"]) { return status === "local" ? "기기에만 저장" : status === "pending" ? "동기화 대기" : status === "conflict" ? "변경 충돌" : "동기화 실패"; }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28 },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 },
+  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12 },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
   newButton: { backgroundColor: tokens.primary, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 10 },
   newButtonText: { color: tokens.white, fontSize: 13, fontWeight: "700" },
   calendarCard: { paddingHorizontal: 9 },
-  monthHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
+  monthHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 7 },
   monthButton: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   monthArrow: { color: tokens.primary, fontSize: 30 },
   monthTitleGroup: { alignItems: "center" },
@@ -229,31 +244,29 @@ const styles = StyleSheet.create({
   monthTitle: { ...typography.section, fontSize: 18 },
   todayLink: { color: tokens.primary, fontSize: 11, fontWeight: "700", paddingTop: 3 },
   calendarGrid: { flexDirection: "row", flexWrap: "wrap" },
-  weekday: { width: "14.2857%", textAlign: "center", ...typography.caption, paddingBottom: 7 },
-  dayCell: { width: "14.2857%", minHeight: 62, alignItems: "center", paddingTop: 5, paddingHorizontal: 2, opacity: 1 },
+  weekday: { width: "14.2857%", textAlign: "center", ...typography.caption, paddingBottom: 5 },
+  dayCell: { width: "14.2857%", minHeight: 46, alignItems: "center", justifyContent: "center", paddingHorizontal: 2, opacity: 1 },
   outsideDay: { opacity: 0.25 },
   selectedDay: { backgroundColor: tokens.primaryLight, borderRadius: 12 },
   dayNumber: { fontSize: 12, color: tokens.text },
   todayNumber: { color: tokens.primary, fontWeight: "800" },
   selectedDayNumber: { color: tokens.primaryDark, fontWeight: "800" },
-  emotionMark: { maxWidth: "100%", borderWidth: 1, borderRadius: 7, marginTop: 4, paddingHorizontal: 3, paddingVertical: 2 },
-  emotionMarkText: { color: tokens.text, fontSize: 8, fontWeight: "700" },
+  emotionDot: { width: 7, height: 7, borderRadius: 4, marginTop: 4 },
   errorText: { color: tokens.danger, fontSize: 12, lineHeight: 18 },
-  resultHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 22, marginBottom: 10 },
-  loadError: { backgroundColor: tokens.dangerLight, borderRadius: 12, padding: 12, marginBottom: 10 },
+  loadError: { backgroundColor: tokens.dangerLight, borderRadius: 12, padding: 12, marginTop: 10 },
   retryText: { color: tokens.primary, fontSize: 12, fontWeight: "700", marginTop: 4 },
-  record: { flexDirection: "row", gap: 10, backgroundColor: tokens.white, borderWidth: 1, borderColor: tokens.outline, borderRadius: 18, padding: 13, marginBottom: 10 },
-  dateSide: { width: 30, alignItems: "center" },
-  dateNumber: { fontFamily: "serif", color: tokens.text, fontSize: 20, fontWeight: "700" },
-  dot: { width: 6, height: 6, borderRadius: 3, marginTop: 3 },
-  recordMain: { flex: 1 },
-  recordChips: { flexDirection: "row", flexWrap: "wrap", gap: 4, marginBottom: 6 },
-  recordText: { ...typography.body, color: tokens.textMuted, marginBottom: 5 },
+  previewDock: { backgroundColor: tokens.white, borderTopWidth: 1, borderTopColor: tokens.outline, paddingHorizontal: 20, paddingTop: 11, paddingBottom: 10, minHeight: 140 },
+  previewHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  previewDate: { color: tokens.text, fontSize: 14, fontWeight: "800" },
+  previewList: { gap: 9, paddingRight: 20 },
+  previewCard: { width: 286, minHeight: 84, backgroundColor: tokens.background, borderWidth: 1, borderColor: tokens.outline, borderRadius: 15, paddingHorizontal: 12, paddingVertical: 9 },
+  previewMeta: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 8 },
+  previewEmotions: { flex: 1, flexDirection: "row", flexWrap: "wrap", gap: 4 },
+  previewBody: { color: tokens.textMuted, fontSize: 12, lineHeight: 17, marginTop: 5, paddingRight: 8 },
+  previewLink: { color: tokens.primary, fontSize: 11, fontWeight: "700", alignSelf: "flex-end", marginTop: 3 },
+  previewEmpty: { minHeight: 76, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: tokens.background, borderRadius: 15 },
+  previewEmptyIcon: { fontSize: 20 },
   syncBadge: { alignSelf: "flex-start", color: tokens.primaryDark, backgroundColor: tokens.primaryLight, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 4, fontSize: 10, fontWeight: "700" },
-  arrow: { alignSelf: "center", color: tokens.outline, fontSize: 25 },
-  empty: { alignItems: "center", paddingHorizontal: 24, paddingVertical: 42, gap: 8 },
-  emptyEmoji: { fontSize: 40 },
-  center: { textAlign: "center" },
   modalOverlay: { flex: 1, backgroundColor: "rgba(20, 13, 33, 0.38)", alignItems: "center", justifyContent: "center", padding: 24 },
   pickerCard: { width: "100%", maxWidth: 360, gap: 14 },
   pickerYearRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },

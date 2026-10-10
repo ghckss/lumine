@@ -8,12 +8,16 @@ function journal(date: string, emotions: string[], body = "", suffix = ""): Jour
 }
 
 describe("calendar dates", () => {
-  it("builds a Monday-first six-week grid around a leap February", () => {
+  it("builds the minimum Monday-first grid around a leap February", () => {
     const grid = buildMonthGrid("2024-02-15");
-    expect(grid).toHaveLength(42);
+    expect(grid).toHaveLength(35);
     expect(grid[0]).toEqual({ date: "2024-01-29", day: 29, inMonth: false });
     expect(grid[31]).toEqual({ date: "2024-02-29", day: 29, inMonth: true });
-    expect(grid[41].date).toBe("2024-03-10");
+    expect(grid[34].date).toBe("2024-03-03");
+  });
+
+  it("keeps a sixth week only when the month needs it", () => {
+    expect(buildMonthGrid("2026-08-01")).toHaveLength(42);
   });
 
   it("moves across years and returns exact month boundaries", () => {
