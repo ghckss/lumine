@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-nati
 import { buildMindReport, getGreeting, listIsoDays, localIsoDate } from "@lumine/domain";
 import { tokens } from "../../config/tokens";
 import { useApp } from "../../context/AppContext";
-import { useSession } from "../../context/SessionContext";
+import { useSession } from "../../features/auth/model/SessionProvider";
 import { BottomTabs, Card, EmotionChip, Page, PageScroll, typography } from "../../components/NativeUI";
 import { getEmotionColor } from "../../types/content";
 

@@ -2,7 +2,7 @@ import React from "react";
 import { Alert, Linking, Pressable, Share, StyleSheet, Text, View } from "react-native";
 import { tokens } from "../../config/tokens";
 import { useApp } from "../../context/AppContext";
-import { useSession } from "../../context/SessionContext";
+import { useSession } from "../../features/auth/model/SessionProvider";
 import { Card, Page, PageScroll, PrimaryButton, TopBar, typography } from "../../components/NativeUI";
 import { appMeta } from "../../config/app-meta";
 import { exportUserDataFile } from "../../lib/data-export";

@@ -15,7 +15,7 @@ import {
   upsertJournalOperation,
   type JournalOperation
 } from "../storage/journal-operations";
-import { useSession } from "./SessionContext";
+import { useSession } from "../features/auth/model/SessionProvider";
 import { enqueuePendingSync, removePendingJournal } from "../storage/pending-sync";
 import type { AppRoute, JournalRecord, PageName, ScreeningResult } from "../types/content";
 
