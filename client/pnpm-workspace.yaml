@@ -1,0 +1,9 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+allowBuilds:
+  dooboolab-welcome: false
+  esbuild: true
+  sharp: true
+  unrs-resolver: false

@@ -29,7 +29,10 @@ resource "aws_subnet" "public" {
   cidr_block              = cidrsubnet(aws_vpc.main.cidr_block, 8, count.index)
   map_public_ip_on_launch = true
 
-  tags = { Name = "${local.name}-public-${count.index + 1}" }
+  tags = {
+    Name                     = "${local.name}-public-${count.index + 1}"
+    "kubernetes.io/role/elb" = "1"
+  }
 }
 
 resource "aws_subnet" "private" {
@@ -38,7 +41,10 @@ resource "aws_subnet" "private" {
   availability_zone = local.azs[count.index]
   cidr_block        = cidrsubnet(aws_vpc.main.cidr_block, 8, count.index + 10)
 
-  tags = { Name = "${local.name}-private-${count.index + 1}" }
+  tags = {
+    Name                              = "${local.name}-private-${count.index + 1}"
+    "kubernetes.io/role/internal-elb" = "1"
+  }
 }
 
 resource "aws_route_table" "public" {
@@ -103,7 +109,7 @@ resource "aws_security_group" "apprunner" {
 
 resource "aws_security_group" "database" {
   name        = "${local.name}-database"
-  description = "PostgreSQL access from App Runner only"
+  description = "PostgreSQL access from Lumine compute services"
   vpc_id      = aws_vpc.main.id
 
   ingress {
@@ -154,6 +160,31 @@ resource "aws_ecr_repository" "server" {
 
 resource "aws_ecr_lifecycle_policy" "server" {
   repository = aws_ecr_repository.server.name
+  policy = jsonencode({
+    rules = [{
+      rulePriority = 1
+      description  = "Keep the latest 20 images"
+      selection = {
+        tagStatus   = "any"
+        countType   = "imageCountMoreThan"
+        countNumber = 20
+      }
+      action = { type = "expire" }
+    }]
+  })
+}
+
+resource "aws_ecr_repository" "web" {
+  name                 = "${local.name}-web"
+  image_tag_mutability = "IMMUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+}
+
+resource "aws_ecr_lifecycle_policy" "web" {
+  repository = aws_ecr_repository.web.name
   policy = jsonencode({
     rules = [{
       rulePriority = 1
@@ -350,7 +381,15 @@ data "aws_iam_policy_document" "github_deploy" {
       "ecr:PutImage",
       "ecr:UploadLayerPart"
     ]
-    resources = [aws_ecr_repository.server.arn]
+    resources = [aws_ecr_repository.server.arn, aws_ecr_repository.web.arn]
+  }
+  statement {
+    actions   = ["eks:DescribeCluster"]
+    resources = [aws_eks_cluster.main.arn]
+  }
+  statement {
+    actions   = ["secretsmanager:GetSecretValue"]
+    resources = local.runtime_secret_arns
   }
   statement {
     actions = [

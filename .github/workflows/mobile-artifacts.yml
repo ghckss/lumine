@@ -4,6 +4,13 @@ on:
   push:
     branches:
       - block
+    paths:
+      - "client/apps/app/**"
+      - "client/packages/**"
+      - "client/pnpm-lock.yaml"
+      - "client/pnpm-workspace.yaml"
+      - "client/turbo.json"
+      - ".github/workflows/mobile-artifacts.yml"
   workflow_dispatch:
 
 env:
@@ -14,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: app
+        working-directory: client/apps/app
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,6 +44,7 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+        working-directory: client
 
       - name: Validate production API URL
         run: |
@@ -64,14 +72,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: lumine-android-aab
-          path: app/android/app/build/outputs/bundle/release/*.aab
+          path: client/apps/app/android/app/build/outputs/bundle/release/*.aab
           if-no-files-found: error
 
   ios-artifact:
     runs-on: macos-14
     defaults:
       run:
-        working-directory: app
+        working-directory: client/apps/app
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -88,6 +96,7 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+        working-directory: client
 
       - name: Validate production API URL
         run: |
@@ -101,7 +110,7 @@ jobs:
         with:
           ruby-version: 3.2
           bundler-cache: true
-          working-directory: app
+          working-directory: client/apps/app
 
       - name: Install pods
         run: |
@@ -159,12 +168,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: lumine-ios-xcarchive
-          path: app/ios/build/LumineNativeShell.xcarchive
+          path: client/apps/app/ios/build/LumineNativeShell.xcarchive
           if-no-files-found: error
 
       - name: Upload iOS IPA
         uses: actions/upload-artifact@v4
         with:
           name: lumine-ios-ipa
-          path: app/ios/build/export/*.ipa
+          path: client/apps/app/ios/build/export/*.ipa
           if-no-files-found: error

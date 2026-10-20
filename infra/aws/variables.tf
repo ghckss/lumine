@@ -30,9 +30,15 @@ variable "github_oidc_provider_arn" {
 }
 
 variable "create_apprunner_service" {
-  description = "Enable after the first :latest image has been pushed to ECR."
+  description = "Legacy migration switch. Keep enabled only until traffic has moved from App Runner to EKS."
   type        = bool
   default     = false
+}
+
+variable "eks_public_access_cidrs" {
+  description = "CIDRs allowed to reach the public EKS API endpoint. Restrict this after GitHub-hosted deployment is replaced by a private runner."
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
 }
 
 variable "db_name" {

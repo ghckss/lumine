@@ -42,21 +42,21 @@ wait_for_http() {
 }
 
 run_bg server /bin/zsh -lc "cd '$ROOT_DIR' && ./scripts/run-server-dev.sh"
-run_bg metro /bin/zsh -lc "cd '$ROOT_DIR/app' && pnpm start"
+run_bg metro /bin/zsh -lc "cd '$ROOT_DIR' && pnpm --dir client --filter @lumine/app run start"
 
 wait_for_http server "http://127.0.0.1:8080/api/screening/questionnaire"
 sleep 3
 
 echo "[lumine] launching ios"
 (
-  cd "$ROOT_DIR/app"
-  pnpm ios:no-packager
+  cd "$ROOT_DIR"
+  pnpm --dir client --filter @lumine/app run ios:no-packager
 )
 
 echo "[lumine] launching android"
 (
-  cd "$ROOT_DIR/app"
-  pnpm android:no-packager
+  cd "$ROOT_DIR"
+  pnpm --dir client --filter @lumine/app run android:no-packager
 )
 
 wait

@@ -1,4 +1,4 @@
-name: Deploy server to AWS
+name: Deploy server to Amazon EKS
 
 on:
   push:
@@ -6,7 +6,8 @@ on:
       - master
     paths:
       - "server/**"
-      - "scripts/deploy-server.sh"
+      - "infra/k8s/base/namespace.yaml"
+      - "infra/k8s/base/server.yaml"
       - ".github/workflows/deploy.yml"
   workflow_dispatch:
 
@@ -22,7 +23,7 @@ env:
   AWS_REGION: ${{ vars.AWS_REGION }}
   AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
   ECR_SERVER_REPOSITORY: ${{ vars.ECR_SERVER_REPOSITORY }}
-  APP_RUNNER_SERVICE_ARN: ${{ vars.AWS_APPRUNNER_SERVICE_ARN }}
+  EKS_CLUSTER_NAME: ${{ vars.EKS_CLUSTER_NAME }}
 
 jobs:
   test:
@@ -31,80 +32,89 @@ jobs:
       run:
         working-directory: server
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Setup Java
-        uses: actions/setup-java@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: "8.10.2"
-
-      - name: Test server
-        run: gradle test
+      - run: gradle test
 
   deploy:
     needs: test
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Configure AWS credentials with OIDC
-        uses: aws-actions/configure-aws-credentials@v6
+      - uses: actions/checkout@v6
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-          role-session-name: lumine-${{ github.run_id }}
-
-      - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build and push server image
+          role-session-name: lumine-server-${{ github.run_id }}
+      - uses: aws-actions/amazon-ecr-login@v2
+      - uses: docker/setup-buildx-action@v3
+      - name: Build and push immutable server image
         uses: docker/build-push-action@v6
         with:
           context: server
           push: true
           platforms: linux/amd64
-          tags: |
-            ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_SERVER_REPOSITORY }}:${{ github.sha }}
-            ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_SERVER_REPOSITORY }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Start App Runner deployment
-        id: deploy
-        run: |
-          operation_id=$(aws apprunner start-deployment \
-            --service-arn "$APP_RUNNER_SERVICE_ARN" \
-            --query OperationId \
-            --output text)
-          echo "operation_id=$operation_id" >> "$GITHUB_OUTPUT"
-
-      - name: Wait for App Runner deployment
+          tags: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_SERVER_REPOSITORY }}:${{ github.sha }}-${{ github.run_attempt }}
+          cache-from: type=gha,scope=lumine-server
+          cache-to: type=gha,mode=max,scope=lumine-server
+      - name: Configure kubectl
+        run: aws eks update-kubeconfig --name "$EKS_CLUSTER_NAME" --region "$AWS_REGION"
+      - name: Apply runtime configuration and secrets
         env:
-          OPERATION_ID: ${{ steps.deploy.outputs.operation_id }}
+          DB_URL: ${{ vars.DB_URL }}
+          DB_USERNAME: ${{ vars.DB_USERNAME }}
+          DB_SECRET_ARN: ${{ vars.DB_SECRET_ARN }}
+          JWT_SECRET_ARN: ${{ vars.JWT_SECRET_ARN }}
+          OPENAI_API_KEY_SECRET_ARN: ${{ vars.OPENAI_API_KEY_SECRET_ARN }}
+          GOOGLE_CLIENT_IDS: ${{ vars.GOOGLE_CLIENT_IDS }}
+          KAKAO_APP_IDS: ${{ vars.KAKAO_APP_IDS }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
         run: |
-          for attempt in $(seq 1 40); do
-            status=$(aws apprunner list-operations \
-              --service-arn "$APP_RUNNER_SERVICE_ARN" \
-              --query "OperationSummaryList[?Id=='$OPERATION_ID'].Status | [0]" \
-              --output text)
-            echo "App Runner deployment status: $status"
-            case "$status" in
-              SUCCEEDED) exit 0 ;;
-              FAILED|ROLLBACK_SUCCEEDED|ROLLBACK_FAILED) exit 1 ;;
-            esac
-            sleep 15
-          done
-          echo "Timed out waiting for App Runner deployment."
-          exit 1
+          kubectl apply -f infra/k8s/base/namespace.yaml
+
+          kubectl -n lumine create configmap lumine-server-config \
+            --from-literal=SPRING_PROFILES_ACTIVE=postgres \
+            --from-literal=DB_URL="$DB_URL" \
+            --from-literal=DB_USERNAME="$DB_USERNAME" \
+            --from-literal=AUTH_MOCK_LOGIN_ENABLED=false \
+            --from-literal=AUTH_JWT_ISSUER=lumine-production \
+            --from-literal=GOOGLE_CLIENT_IDS="$GOOGLE_CLIENT_IDS" \
+            --from-literal=KAKAO_APP_IDS="$KAKAO_APP_IDS" \
+            --from-literal=OPENAI_MODEL="${OPENAI_MODEL:-gpt-5.2}" \
+            --from-literal=SERVER_FORWARD_HEADERS_STRATEGY=framework \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+          secret_dir="$RUNNER_TEMP/lumine-secrets"
+          mkdir -p "$secret_dir"
+          chmod 700 "$secret_dir"
+          aws secretsmanager get-secret-value --secret-id "$DB_SECRET_ARN" --query SecretString --output text \
+            | jq -r .password > "$secret_dir/DB_PASSWORD"
+          aws secretsmanager get-secret-value --secret-id "$JWT_SECRET_ARN" --query SecretString --output text \
+            > "$secret_dir/AUTH_JWT_SECRET"
+
+          secret_args=(
+            --from-file="DB_PASSWORD=$secret_dir/DB_PASSWORD"
+            --from-file="AUTH_JWT_SECRET=$secret_dir/AUTH_JWT_SECRET"
+          )
+          if [[ -n "$OPENAI_API_KEY_SECRET_ARN" ]]; then
+            aws secretsmanager get-secret-value --secret-id "$OPENAI_API_KEY_SECRET_ARN" --query SecretString --output text \
+              > "$secret_dir/OPENAI_API_KEY"
+            secret_args+=(--from-file="OPENAI_API_KEY=$secret_dir/OPENAI_API_KEY")
+          fi
+
+          kubectl -n lumine create secret generic lumine-server-secrets \
+            "${secret_args[@]}" --dry-run=client -o yaml | kubectl apply -f -
+      - name: Deploy server
+        env:
+          SERVER_IMAGE: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_SERVER_REPOSITORY }}:${{ github.sha }}-${{ github.run_attempt }}
+        run: |
+          kubectl -n lumine apply -f infra/k8s/base/server.yaml
+          kubectl -n lumine set image deployment/lumine-server server="$SERVER_IMAGE"
+          kubectl -n lumine rollout status deployment/lumine-server --timeout=10m

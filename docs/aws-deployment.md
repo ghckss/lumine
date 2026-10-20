@@ -1,22 +1,49 @@
-# AWS 서버 배포 가이드
+# AWS EKS 배포 가이드
 
-## 구성
+## 선택한 구성
 
-- Amazon ECR: Spring Boot 컨테이너 이미지 저장
-- AWS App Runner: 공개 HTTPS API 실행, 헬스체크와 자동 확장
-- Amazon RDS for PostgreSQL: 사용자별 일기와 마음 확인 데이터 저장
-- VPC: App Runner와 RDS를 프라이빗 서브넷에 배치
-- NAT Gateway: 서버가 Google, Kakao, OpenAI 공개 API에 접근할 수 있도록 제공
-- AWS Secrets Manager: DB 비밀번호, JWT 서명 키, 선택적인 OpenAI 키 관리
-- GitHub Actions OIDC: 장기 AWS 액세스 키 없이 배포
+Lumine은 Kubernetes 요구를 유지하면서 운영 부담을 줄이기 위해 Amazon EKS Auto Mode를 사용한다.
 
-인프라 정의는 `infra/aws`에 있다. 기본 리전은 서울 `ap-northeast-2`이며, App Runner가 제공하는 HTTPS 주소를 바로 사용할 수 있다.
+- Amazon ECR: `server`, `web` Docker 이미지 저장
+- Amazon EKS Auto Mode: 노드 프로비저닝, 교체, 확장, 스토리지와 로드밸런서 관리
+- Application Load Balancer: `/api`, `/actuator`는 서버로, 나머지는 웹으로 라우팅
+- Amazon RDS for PostgreSQL: 운영 데이터 저장
+- AWS Secrets Manager: DB 비밀번호, JWT 서명 키, 선택적인 OpenAI 키 보관
+- GitHub Actions OIDC: 장기 액세스 키 없이 server와 web을 독립 배포
+- ACM: ALB의 HTTPS 인증서
 
-## 사전 준비
+React Native 앱은 Kubernetes에 실행하는 서비스가 아니므로 기존 Android/iOS 아티팩트 파이프라인을 유지한다. 앱은 EKS의 공개 HTTPS 주소를 API URL로 사용한다.
 
-로컬에 AWS CLI, Terraform 1.7 이상, Docker Buildx를 설치하고 AWS 관리자 권한이 있는 프로필로 로그인한다.
+## 왜 EKS Auto Mode인가
 
-JWT 서명 키를 Secrets Manager에 먼저 만든다.
+작은 서비스만 고려하면 App Runner나 ECS Fargate가 더 저렴하고 단순하다. 하지만 Docker와 Kubernetes를 명시적인 운영 기준으로 삼는 경우 EKS Auto Mode가 일반 EKS보다 적합하다.
+
+- Karpenter, AWS Load Balancer Controller, EBS CSI 같은 핵심 구성요소를 직접 설치·업데이트하지 않아도 된다.
+- Pod 요청량을 기반으로 EC2 용량을 추가하고 유휴 노드를 통합한다.
+- 표준 Kubernetes 리소스와 `kubectl`을 그대로 사용한다.
+- server와 web의 배포 주기, 롤백, 리소스 제한을 분리할 수 있다.
+
+비용은 EKS 제어 영역, Auto Mode 관리 요금, EC2, ALB, NAT Gateway, RDS, ECR, 데이터 전송을 합산한다. 트래픽이 매우 적고 Kubernetes가 필수가 아니라면 App Runner를 유지하는 편이 경제적이다.
+
+## 저장소 구성
+
+```text
+server/Dockerfile                       Spring Boot 이미지
+client/apps/web/Dockerfile              Next.js 정적 웹 + nginx 이미지
+infra/aws/                              VPC, RDS, ECR, EKS Auto Mode, IAM
+infra/k8s/base/                         server/web Deployment와 Service
+infra/k8s/overlays/production/          ALB Ingress와 운영 설정 예시
+.github/workflows/deploy.yml             server 독립 배포
+.github/workflows/deploy-web.yml         web 독립 배포
+```
+
+기존 App Runner 리소스는 마이그레이션 중 서비스 중단을 피하기 위해 Terraform에 남겨 두었다. EKS 전환과 데이터 검증이 끝난 뒤 `create_apprunner_service = false`로 적용해 제거한다.
+
+## 1. 사전 준비
+
+로컬에 AWS CLI, Terraform 1.7 이상, Docker Buildx, `kubectl`을 설치한다. AWS 관리자 권한 프로필로 로그인하고 ACM에서 운영 도메인의 인증서를 발급·검증한다.
+
+JWT 키가 없다면 생성한다.
 
 ```bash
 aws secretsmanager create-secret \
@@ -25,16 +52,7 @@ aws secretsmanager create-secret \
   --secret-string "$(openssl rand -base64 48)"
 ```
 
-OpenAI 생성을 사용할 경우 API 키도 별도 secret string으로 만든다. 생략하면 서버의 규칙 기반 문장이 사용된다.
-
-```bash
-aws secretsmanager create-secret \
-  --region ap-northeast-2 \
-  --name lumine/production/openai \
-  --secret-string "YOUR_OPENAI_API_KEY"
-```
-
-## 1. 기본 인프라 생성
+## 2. Terraform 적용
 
 ```bash
 cd infra/aws
@@ -44,102 +62,95 @@ terraform plan
 terraform apply
 ```
 
-`terraform.tfvars`에서 다음 값을 실제 환경에 맞게 변경한다.
+`terraform.tfvars`에는 실제 Secret ARN, OAuth Client ID와 GitHub OIDC subject를 설정한다. `eks_public_access_cidrs` 기본값은 GitHub-hosted runner를 위해 전체 공개되어 있다. 자체 runner나 고정 출구 IP를 사용하면 해당 CIDR로 반드시 제한한다.
 
-- `jwt_secret_arn`: 앞에서 만든 JWT secret ARN
-- `google_client_ids`: 서버가 허용할 Google OAuth 클라이언트 ID 목록
-- `kakao_app_ids`: 서버가 허용할 숫자형 Kakao 앱 ID 목록
-- `github_oidc_subject`: GitHub의 실제 OIDC `sub` 클레임
-- `github_oidc_provider_arn`: AWS 계정에 GitHub OIDC 공급자가 이미 있을 때만 지정
-- `openai_api_key_secret_arn`: OpenAI 사용 시에만 지정
-
-최초 적용에서는 `create_apprunner_service = false`를 유지한다. App Runner는 시작할 이미지가 ECR에 먼저 존재해야 하기 때문이다.
-
-GitHub `production` Environment를 사용하는 기본 OIDC subject는 `repo:ghckss/lumine:environment:production`이다. 2026년 7월 이후 생성되었거나 이름이 변경된 저장소는 조직·저장소 숫자 ID가 포함된 불변 subject를 사용할 수 있으므로 실제 토큰 클레임과 반드시 대조한다.
-
-## 2. 최초 이미지 업로드
+주요 출력 확인:
 
 ```bash
-cd infra/aws
-ECR_URL="$(terraform output -raw ecr_repository_url)"
-AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
-AWS_REGION="ap-northeast-2"
-
-aws ecr get-login-password --region "$AWS_REGION" \
-  | docker login --username AWS --password-stdin "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-
-docker buildx build \
-  --platform linux/amd64 \
-  --tag "${ECR_URL}:latest" \
-  --push \
-  ../../server
+terraform output eks_cluster_name
+terraform output ecr_repository_name
+terraform output web_ecr_repository_name
+terraform output github_actions_role_arn
+terraform output -raw database_jdbc_url
+terraform output -raw database_secret_arn
 ```
 
-## 3. App Runner 생성
-
-`terraform.tfvars`에서 다음 값을 바꾸고 다시 적용한다.
-
-```hcl
-create_apprunner_service = true
-```
-
-```bash
-terraform plan
-terraform apply
-terraform output
-```
-
-`api_base_url`이 모바일 앱에서 사용할 HTTPS 주소다. 배포 후 아래 URL이 `UP`을 반환하는지 확인한다.
-
-```bash
-curl "$(terraform output -raw api_base_url)/actuator/health"
-```
-
-## 4. GitHub 설정
-
-GitHub 저장소에 `production` Environment를 만든다. Environment 보호 규칙을 켜면 승인 후에만 운영 배포되도록 설정할 수 있다.
-
-Repository Variables:
-
-- `AWS_REGION`: `ap-northeast-2`
-- `AWS_ACCOUNT_ID`: AWS 계정 ID
-- `ECR_SERVER_REPOSITORY`: `terraform output -raw ecr_repository_name`
-- `AWS_APPRUNNER_SERVICE_ARN`: `terraform output -raw apprunner_service_arn`
-- `LUMINE_API_BASE_URL`: `terraform output -raw api_base_url`
+## 3. GitHub production 환경 설정
 
 Environment Secret:
 
 - `AWS_ROLE_ARN`: `terraform output -raw github_actions_role_arn`
 
-`master` 브랜치에서 `server/**` 또는 배포 워크플로가 변경되면 다음 순서로 자동 배포된다.
+Repository 또는 production Environment Variables:
 
-1. 서버 테스트
-2. OIDC 단기 자격 증명 발급
-3. Docker 이미지 빌드 및 ECR 업로드
-4. App Runner 배포 시작
-5. 배포 완료 또는 롤백 상태 확인
+- `AWS_REGION`: `ap-northeast-2`
+- `AWS_ACCOUNT_ID`: AWS 계정 ID
+- `EKS_CLUSTER_NAME`: `terraform output -raw eks_cluster_name`
+- `ECR_SERVER_REPOSITORY`: `terraform output -raw ecr_repository_name`
+- `ECR_WEB_REPOSITORY`: `terraform output -raw web_ecr_repository_name`
+- `DB_URL`: `terraform output -raw database_jdbc_url`
+- `DB_USERNAME`: 기본값 `lumine_admin`
+- `DB_SECRET_ARN`: `terraform output -raw database_secret_arn`
+- `JWT_SECRET_ARN`: JWT secret ARN
+- `OPENAI_API_KEY_SECRET_ARN`: 선택 사항
+- `GOOGLE_CLIENT_IDS`, `KAKAO_APP_IDS`, `OPENAI_MODEL`
+- `ACM_CERTIFICATE_ARN`: 운영 도메인의 ACM 인증서 ARN
+- `LUMINE_PUBLIC_BASE_URL`: 예: `https://lumine.example.com`
+- `LUMINE_API_BASE_URL`: 모바일 빌드에서도 같은 주소 사용
 
-필요하면 GitHub Actions 화면에서 `Deploy server to AWS`를 수동 실행할 수 있다.
+서버 워크플로는 Secrets Manager의 값을 로그에 출력하지 않고 Kubernetes Secret으로 동기화한다.
 
-## 5. 모바일 앱 연결
+## 4. 최초 배포
 
-개발 빌드는 환경변수가 없으면 로컬 서버를 사용한다. 스토어 빌드는 Repository Variable `LUMINE_API_BASE_URL`을 번들에 포함하며, 값이 HTTPS 주소가 아니면 GitHub Actions가 빌드를 중단한다. App Runner 생성 후 `terraform output -raw api_base_url` 값을 등록하고 실제 기기에서 로그인·기록 저장을 확인한다.
+GitHub Actions에서 다음 순서로 수동 실행한다.
 
-## 운영 주의사항
+1. `Deploy server to Amazon EKS`
+2. `Deploy web to Amazon EKS`
 
-- RDS는 외부 공개를 차단하고 App Runner 보안 그룹에서만 5432 포트 접근을 허용한다.
-- DB 마스터 비밀번호는 RDS가 Secrets Manager에서 생성·관리한다.
-- 운영 DB는 기본적으로 삭제 방지가 켜져 있다.
-- JWT 및 OpenAI 비밀값은 GitHub에 원문으로 저장하지 않는다.
-- NAT Gateway는 이 구성의 주요 고정 비용이다. Google·Kakao·OpenAI 호출 때문에 공개 인터넷 송신 경로가 필요하다.
-- 초기 비용을 낮추기 위해 NAT Gateway와 RDS는 단일 인스턴스로 구성했다. 높은 가용성이 필요해지면 AZ별 NAT Gateway와 RDS Multi-AZ를 적용한다.
-- Terraform 상태에는 인프라 식별 정보가 포함되므로 팀 운영 전 S3 원격 상태와 잠금 구성을 추가한다.
-- 비용 알림, RDS 스냅샷 복원 훈련, App Runner 로그 보존 기간, 커스텀 도메인 연결은 실제 출시 전에 별도로 설정한다.
+웹 배포가 끝나면 ALB 주소를 확인한다.
 
-## 공식 참고 문서
+```bash
+aws eks update-kubeconfig --name lumine-production-eks --region ap-northeast-2
+kubectl -n lumine get ingress lumine
+```
 
-- [GitHub Actions에서 AWS OIDC 구성](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-aws)
-- [App Runner VPC 송신 및 NAT 구성](https://docs.aws.amazon.com/apprunner/latest/dg/network-vpc.html)
-- [App Runner 환경변수와 Secrets Manager 연동](https://docs.aws.amazon.com/apprunner/latest/dg/env-variable-manage.html)
-- [App Runner 수동 배포 시작](https://docs.aws.amazon.com/cli/latest/reference/apprunner/start-deployment.html)
-- [RDS 비밀번호의 Secrets Manager 관리](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-secrets-manager.html)
+Route 53에서 운영 도메인을 출력된 ALB로 Alias 연결한다. DNS 적용 후 다음을 확인한다.
+
+```bash
+curl https://lumine.example.com/actuator/health
+curl -I https://lumine.example.com/
+kubectl -n lumine get pods,deployments,services,ingress
+```
+
+## 5. 이후 배포와 롤백
+
+- `server/**` 변경: 서버 테스트 → 서버 이미지 빌드 → ECR push → 서버 Deployment 롤링 업데이트
+- `client/apps/web/**` 또는 `client/packages/domain/**` 변경: 웹 검사 → 웹 이미지 빌드 → ECR push → 웹 Deployment 롤링 업데이트
+- 앱은 기존 Android/iOS 아티팩트 워크플로로 별도 관리
+
+이미지는 Git commit SHA와 workflow 재시도 번호를 결합한 불변 태그를 사용한다. 롤백할 때 이전 이미지 태그를 지정한다.
+
+```bash
+kubectl -n lumine set image deployment/lumine-server \
+  server=ACCOUNT.dkr.ecr.ap-northeast-2.amazonaws.com/lumine-production-server:PREVIOUS_SHA
+
+kubectl -n lumine set image deployment/lumine-web \
+  web=ACCOUNT.dkr.ecr.ap-northeast-2.amazonaws.com/lumine-production-web:PREVIOUS_SHA
+```
+
+## 운영 체크리스트
+
+- 운영 전 `eks_public_access_cidrs`를 고정 IP 또는 자체 runner CIDR로 제한
+- RDS 삭제 방지와 백업 복원 훈련 유지
+- ACM 인증서와 Route 53 Alias 연결
+- CloudWatch Container Insights 또는 OpenTelemetry 기반 관측성 추가
+- AWS Budgets로 EKS, EC2, NAT Gateway, ALB, RDS 예산 알림 설정
+- 안정화 후 App Runner 리소스 제거
+- 부하 패턴을 확인한 뒤 HPA와 최소 replica 수 조정
+
+## 공식 참고
+
+- [EKS Auto Mode](https://docs.aws.amazon.com/eks/latest/userguide/automode.html)
+- [EKS Auto Mode ALB Ingress](https://docs.aws.amazon.com/eks/latest/userguide/auto-configure-alb.html)
+- [EKS Auto Mode IAM](https://docs.aws.amazon.com/eks/latest/userguide/auto-learn-iam.html)
+- [Amazon EKS 요금](https://aws.amazon.com/eks/pricing/)

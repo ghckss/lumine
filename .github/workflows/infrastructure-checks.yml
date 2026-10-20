@@ -1,0 +1,50 @@
+name: Infrastructure checks
+
+on:
+  pull_request:
+    paths:
+      - "infra/**"
+      - "server/Dockerfile"
+      - "client/apps/web/Dockerfile"
+      - "client/apps/web/docker/**"
+      - ".github/workflows/deploy*.yml"
+      - ".github/workflows/infrastructure-checks.yml"
+  push:
+    branches:
+      - master
+    paths:
+      - "infra/**"
+      - "server/Dockerfile"
+      - "client/apps/web/Dockerfile"
+      - "client/apps/web/docker/**"
+      - ".github/workflows/deploy*.yml"
+      - ".github/workflows/infrastructure-checks.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/aws
+    steps:
+      - uses: actions/checkout@v6
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+      - run: terraform fmt -check -recursive
+      - run: terraform init -backend=false
+      - run: terraform validate
+
+  kubernetes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: azure/setup-kubectl@v4
+      - run: kubectl kustomize infra/k8s/base > /tmp/lumine-base.yaml
+      - run: kubectl kustomize infra/k8s/overlays/production > /tmp/lumine-production.yaml
+      - run: test -s /tmp/lumine-base.yaml && test -s /tmp/lumine-production.yaml
+

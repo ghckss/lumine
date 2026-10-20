@@ -180,7 +180,7 @@
 - 개발 환경의 H2와 운영 환경의 PostgreSQL 구성을 지원한다.
 - 데이터베이스 스키마 변경을 마이그레이션으로 관리한다.
 - 감정 일기 위로 문장과 마음 확인 결과 생성은 외부 AI 연동 및 기본 대체 로직을 함께 지원한다.
-- AWS App Runner, ECR, RDS PostgreSQL, Secrets Manager 기반 운영 인프라와 GitHub Actions OIDC 자동 배포 구성을 제공한다.
+- Docker, Amazon ECR, EKS Auto Mode, ALB, RDS PostgreSQL, Secrets Manager 기반 운영 인프라와 GitHub Actions OIDC 독립 배포 구성을 제공한다.
 - 서버 헬스체크와 컨테이너 비루트 실행을 적용한다.
 
 ## 현재 제공 범위

@@ -6,6 +6,7 @@ jwt_secret_arn          = "arn:aws:secretsmanager:ap-northeast-2:123456789012:se
 google_client_ids       = "your-google-web-client-id.apps.googleusercontent.com"
 kakao_app_ids           = "123456"
 create_apprunner_service = false
+eks_public_access_cidrs  = ["0.0.0.0/0"]
 
 # Optional. When omitted, the server uses its rule-based message generator.
 # openai_api_key_secret_arn = "arn:aws:secretsmanager:ap-northeast-2:123456789012:secret:lumine/production/openai-XXXXXX"
