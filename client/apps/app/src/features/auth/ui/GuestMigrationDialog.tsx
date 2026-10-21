@@ -1,6 +1,6 @@
 import React from "react";
 import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from "react-native";
-import { PrimaryButton, typography } from "../../../components/NativeUI";
+import { PrimaryButton, typography } from "../../../shared/ui";
 import { tokens } from "../../../shared/theme/tokens";
 import { useSession } from "../model/SessionProvider";
 

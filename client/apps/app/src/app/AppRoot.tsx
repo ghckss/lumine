@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { SafeAreaView, StatusBar, StyleSheet } from "react-native";
 import { GuestMigrationDialog, ProfileSetupScreen, useSession, WelcomeScreen } from "../features/auth";
-import { SplashScreen } from "../components/SplashScreen";
-import { AppProvider } from "../context/AppContext";
+import { JournalProvider } from "../features/journal";
+import { ScreeningProvider } from "../features/screening";
+import { SplashScreen } from "../shared/ui";
 import { tokens } from "../shared/theme/tokens";
 import { initializeAuth } from "./bootstrap/initialize-auth";
 import { AppNavigator, NavigationProvider, useNavigation } from "./navigation";
@@ -33,11 +34,13 @@ function AppGate() {
       ) : session && !profileComplete ? (
         <ProfileSetupScreen />
       ) : (
-        <AppProvider key={session?.userId ?? "guest"} isGuest={guest && !session}>
-          <NavigationProvider>
-            <AppExperience showGuestMigration={Boolean(session)} onRequestLogin={() => setGuest(false)} />
-          </NavigationProvider>
-        </AppProvider>
+        <JournalProvider key={session?.userId ?? "guest"}>
+          <ScreeningProvider>
+            <NavigationProvider>
+              <AppExperience showGuestMigration={Boolean(session)} onRequestLogin={() => setGuest(false)} />
+            </NavigationProvider>
+          </ScreeningProvider>
+        </JournalProvider>
       )}
     </SafeAreaView>
   );

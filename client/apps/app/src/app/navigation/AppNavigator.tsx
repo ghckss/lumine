@@ -1,25 +1,37 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, Dimensions, Easing, Pressable, StyleSheet, Text, View } from "react-native";
+import { DataManagementScreen, MenuScreen } from "../../features/account";
+import { useSession } from "../../features/auth";
+import { HomeScreen } from "../../features/home";
 import { DiaryScreen, RecordDetailScreen, RecordsScreen, useJournal } from "../../features/journal";
+import { MindReportScreen } from "../../features/report";
 import {
   CheckQuestionScreen,
   CheckResultScreen,
   CheckStartScreen,
+  useScreening,
   type ScreeningQuestionnaire,
   type ScreeningResult
 } from "../../features/screening";
+import { LegalScreen, SafetyHelpScreen } from "../../features/support";
 import { tokens } from "../../shared/theme/tokens";
-import { HomeScreen } from "../../screens/native/HomeScreen";
-import { MindReportScreen } from "../../screens/native/MindReportScreen";
-import { DataManagementScreen, LegalScreen, MenuScreen, SafetyHelpScreen } from "../../screens/native/SupportAndSettingsScreens";
 import { AppRouteScope, useNavigation } from "./NavigationProvider";
 import { BottomTabs, TopBar } from "./NavigationChrome";
 import { STACK_TRANSITION_MS, visibleRouteStack } from "./navigation-state";
+import {
+  createHomeRouteActions,
+  createMenuRouteActions,
+  createReportRouteActions,
+  deleteAccountAndClearContent,
+  guestMigrationSyncBadge
+} from "./route-composition";
 import type { AppRoute } from "./routes";
 
 export function AppNavigator({ onRequestLogin }: { onRequestLogin: () => void }) {
   const { stack, backTransitionKey, goBack, navigate, resetTo } = useNavigation();
-  const { pendingJournalDeletion, undoJournalDelete } = useJournal();
+  const journal = useJournal();
+  const screening = useScreening();
+  const session = useSession();
   const visibleRoutes = visibleRouteStack(stack);
   const isPageChange = stack.length === 1;
 
@@ -38,15 +50,18 @@ export function AppNavigator({ onRequestLogin }: { onRequestLogin: () => void })
               goBack,
               navigate,
               resetTo,
-              stackDepth: stack.length
+              stackDepth: stack.length,
+              journal,
+              screening,
+              session
             })}</AppRouteScope>
           </NavigationLayer>
         );
       })}
-      {pendingJournalDeletion ? (
+      {journal.pendingJournalDeletion ? (
         <View style={styles.undoBar} accessibilityLiveRegion="polite">
           <Text style={styles.undoText}>기록을 삭제했어요.</Text>
-          <Pressable accessibilityRole="button" accessibilityLabel="기록 삭제 취소" onPress={() => void undoJournalDelete()} style={styles.undoButton}>
+          <Pressable accessibilityRole="button" accessibilityLabel="기록 삭제 취소" onPress={() => void journal.undoJournalDelete()} style={styles.undoButton}>
             <Text style={styles.undoAction}>실행 취소</Text>
           </Pressable>
         </View>
@@ -60,11 +75,27 @@ type RouteActions = {
   navigate: (page: AppRoute["page"], params?: AppRoute["params"]) => void;
   resetTo: (page: AppRoute["page"], params?: AppRoute["params"]) => void;
   stackDepth: number;
+  journal: ReturnType<typeof useJournal>;
+  screening: ReturnType<typeof useScreening>;
+  session: ReturnType<typeof useSession>;
 };
 
 function renderScreen(route: AppRoute, onRequestLogin: () => void, actions: RouteActions) {
+  const homeRouteActions = createHomeRouteActions(actions.navigate);
+  const reportRouteActions = createReportRouteActions(actions.navigate);
+  const menuRouteActions = createMenuRouteActions(actions.navigate);
   switch (route.page) {
-    case "home": return <HomeScreen />;
+    case "home": return (
+      <HomeScreen
+        journalRecords={actions.journal.journalRecords}
+        screeningResults={actions.screening.screeningResults}
+        isLoading={actions.journal.isJournalLoading || actions.screening.isScreeningLoading}
+        isGuest={!actions.session.session}
+        displayName={actions.session.session?.displayName}
+        footer={<BottomTabs />}
+        {...homeRouteActions}
+      />
+    );
     case "diary": return (
       <DiaryScreen
         renderHeader={(hasExistingRecord) => <TopBar title={hasExistingRecord ? "감정 일기 수정" : "감정 일기"} showMenu />}
@@ -87,7 +118,14 @@ function renderScreen(route: AppRoute, onRequestLogin: () => void, actions: Rout
         onDeleted={() => actions.resetTo("records")}
       />
     );
-    case "mind-report": return <MindReportScreen />;
+    case "mind-report": return (
+      <MindReportScreen
+        journalRecords={actions.journal.journalRecords}
+        screeningResults={actions.screening.screeningResults}
+        header={<TopBar title="마음 리포트" />}
+        {...reportRouteActions}
+      />
+    );
     case "check-start": return (
       <CheckStartScreen
         header={<TopBar showMenu />}
@@ -106,12 +144,34 @@ function renderScreen(route: AppRoute, onRequestLogin: () => void, actions: Rout
     );
     case "check-result": return renderScreeningResult(false, route.params?.result as ScreeningResult | undefined, actions);
     case "safety-result": return renderScreeningResult(true, route.params?.result as ScreeningResult | undefined, actions);
-    case "safety-help": return <SafetyHelpScreen />;
-    case "menu": return <MenuScreen onRequestLogin={onRequestLogin} />;
-    case "data-management": return <DataManagementScreen />;
-    case "terms": return <LegalScreen type="terms" />;
-    case "privacy": return <LegalScreen type="privacy" />;
-    default: return <HomeScreen />;
+    case "safety-help": return <SafetyHelpScreen header={<TopBar title="도움 요청" showMenu />} onOpenDiary={() => actions.navigate("diary")} />;
+    case "menu": return (
+      <MenuScreen
+        isGuest={!actions.session.session}
+        displayName={actions.session.session?.displayName}
+        journalCount={actions.journal.journalRecords.length}
+        screeningCount={actions.screening.screeningResults.length}
+        syncBadge={guestMigrationSyncBadge(actions.session.guestMigration)}
+        header={<TopBar title="메뉴" />}
+        onRequestLogin={onRequestLogin}
+        onRequestGuestMigration={() => void actions.session.requestGuestMigration()}
+        {...menuRouteActions}
+        onLogout={() => void actions.session.logout()}
+      />
+    );
+    case "data-management": return (
+      <DataManagementScreen
+        header={<TopBar title="내 데이터 관리" />}
+        onDeleteAccount={() => deleteAccountAndClearContent({
+          deleteAccount: actions.session.deleteAccount,
+          clearJournalContent: actions.journal.clearJournalContent,
+          clearScreeningContent: actions.screening.clearScreeningContent
+        })}
+      />
+    );
+    case "terms": return <LegalScreen type="terms" header={<TopBar title="이용약관" />} />;
+    case "privacy": return <LegalScreen type="privacy" header={<TopBar title="개인정보처리방침" />} />;
+    default: return null;
   }
 }
 
