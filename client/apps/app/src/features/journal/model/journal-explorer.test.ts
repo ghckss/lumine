@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { JournalRecord } from "../types/content";
+import type { JournalRecord } from "./journal";
 import {
   buildMonthGrid,
   groupJournalRecordsByDate,

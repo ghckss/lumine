@@ -5,7 +5,7 @@ import { SplashScreen } from "../components/SplashScreen";
 import { AppProvider } from "../context/AppContext";
 import { tokens } from "../shared/theme/tokens";
 import { initializeAuth } from "./bootstrap/initialize-auth";
-import { AppNavigator, useNavigation } from "./navigation";
+import { AppNavigator, NavigationProvider, useNavigation } from "./navigation";
 import { AppProviders } from "./providers/AppProviders";
 
 export function AppRoot() {
@@ -34,7 +34,9 @@ function AppGate() {
         <ProfileSetupScreen />
       ) : (
         <AppProvider key={session?.userId ?? "guest"} isGuest={guest && !session}>
-          <AppExperience showGuestMigration={Boolean(session)} onRequestLogin={() => setGuest(false)} />
+          <NavigationProvider>
+            <AppExperience showGuestMigration={Boolean(session)} onRequestLogin={() => setGuest(false)} />
+          </NavigationProvider>
         </AppProvider>
       )}
     </SafeAreaView>

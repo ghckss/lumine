@@ -1,21 +1,19 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, Dimensions, Easing, Pressable, StyleSheet, Text, View } from "react-native";
-import { useApp } from "../../context/AppContext";
+import { DiaryScreen, RecordDetailScreen, RecordsScreen, useJournal } from "../../features/journal";
 import { tokens } from "../../shared/theme/tokens";
 import { HomeScreen } from "../../screens/native/HomeScreen";
-import { DiaryScreen, RecordDetailScreen } from "../../screens/native/JournalScreens";
 import { MindReportScreen } from "../../screens/native/MindReportScreen";
-import { RecordsScreen } from "../../screens/native/RecordsScreen";
 import { CheckQuestionScreen, CheckResultScreen, CheckStartScreen } from "../../screens/native/ScreeningScreens";
 import { DataManagementScreen, LegalScreen, MenuScreen, SafetyHelpScreen } from "../../screens/native/SupportAndSettingsScreens";
 import { AppRouteScope, useNavigation } from "./NavigationProvider";
+import { BottomTabs, TopBar } from "./NavigationChrome";
 import { STACK_TRANSITION_MS, visibleRouteStack } from "./navigation-state";
 import type { AppRoute } from "./routes";
 
 export function AppNavigator({ onRequestLogin }: { onRequestLogin: () => void }) {
-  const { stack, backTransitionKey } = useNavigation();
-  // Journal deletion UI remains a transitional integration until C4 owns it.
-  const { pendingJournalDeletion, undoJournalDelete } = useApp();
+  const { stack, backTransitionKey, goBack, navigate, resetTo } = useNavigation();
+  const { pendingJournalDeletion, undoJournalDelete } = useJournal();
   const visibleRoutes = visibleRouteStack(stack);
   const isPageChange = stack.length === 1;
 
@@ -30,7 +28,12 @@ export function AppNavigator({ onRequestLogin }: { onRequestLogin: () => void })
             exiting={route.key === backTransitionKey}
             interactive={isTop}
           >
-            <AppRouteScope route={route}>{renderScreen(route, onRequestLogin)}</AppRouteScope>
+            <AppRouteScope route={route}>{renderScreen(route, onRequestLogin, {
+              goBack,
+              navigate,
+              resetTo,
+              stackDepth: stack.length
+            })}</AppRouteScope>
           </NavigationLayer>
         );
       })}
@@ -46,12 +49,38 @@ export function AppNavigator({ onRequestLogin }: { onRequestLogin: () => void })
   );
 }
 
-function renderScreen(route: AppRoute, onRequestLogin: () => void) {
+type RouteActions = {
+  goBack: () => void;
+  navigate: (page: AppRoute["page"], params?: AppRoute["params"]) => void;
+  resetTo: (page: AppRoute["page"], params?: AppRoute["params"]) => void;
+  stackDepth: number;
+};
+
+function renderScreen(route: AppRoute, onRequestLogin: () => void, actions: RouteActions) {
   switch (route.page) {
     case "home": return <HomeScreen />;
-    case "diary": return <DiaryScreen />;
-    case "records": return <RecordsScreen />;
-    case "record-detail": return <RecordDetailScreen />;
+    case "diary": return (
+      <DiaryScreen
+        renderHeader={(hasExistingRecord) => <TopBar title={hasExistingRecord ? "감정 일기 수정" : "감정 일기"} showMenu />}
+        onOpenRecord={(recordId) => actions.navigate("record-detail", { recordId, backToHome: true })}
+      />
+    );
+    case "records": return (
+      <RecordsScreen
+        header={<TopBar title="마음기록 전체보기" onBack={actions.stackDepth > 1 ? actions.goBack : () => actions.resetTo("home")} />}
+        footer={<BottomTabs />}
+        onOpenDiary={() => actions.navigate("diary")}
+        onOpenRecord={(recordId) => actions.navigate("record-detail", { recordId })}
+      />
+    );
+    case "record-detail": return (
+      <RecordDetailScreen
+        recordId={typeof route.params?.recordId === "string" ? route.params.recordId : undefined}
+        renderHeader={(recordFound) => <TopBar title={recordFound ? undefined : "기록 상세"} showMenu onBack={route.params?.backToHome ? () => actions.resetTo("home") : undefined} />}
+        onEdit={() => actions.navigate("diary")}
+        onDeleted={() => actions.resetTo("records")}
+      />
+    );
     case "mind-report": return <MindReportScreen />;
     case "check-start": return <CheckStartScreen />;
     case "check-question": return <CheckQuestionScreen />;

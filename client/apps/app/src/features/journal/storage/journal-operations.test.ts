@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { JournalRecord } from "../types/content";
+import type { JournalRecord } from "../model/journal";
 import { mergeJournalOperations, restoreJournalOperationsAfterUndo, upsertJournalOperation, type JournalOperation } from "./journal-operations";
 
 const record: JournalRecord = {
@@ -62,5 +62,12 @@ describe("journal operations", () => {
     );
     expect(restored).toHaveLength(1);
     expect(restored[0]).toMatchObject({ kind: "save", record: pendingRecord, expectedVersion: 2 });
+  });
+
+  it("removes a synced deletion without synthesizing a save when undone", () => {
+    expect(restoreJournalOperationsAfterUndo(
+      [operation({ id: "delete", kind: "delete" })],
+      record
+    )).toEqual([]);
   });
 });

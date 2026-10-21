@@ -17,16 +17,9 @@ vi.mock("../storage/journal-drafts", () => ({
   removeJournalDraft: vi.fn(async () => undefined)
 }));
 
-vi.mock("./api", () => {
-  class ApiError extends Error {
-    constructor(public readonly status: number) {
-      super(`Request failed: ${status}`);
-    }
-  }
+vi.mock("../api/journal-api", () => {
   return {
-    ApiError,
-    isRetryableApiError: (error: unknown) => !(error instanceof ApiError) || error.status >= 500,
-    api: {
+    journalApi: {
       saveJournalEntry: vi.fn(async (payload: { date: string; emotions: string[]; body: string }) => {
         state.saveCalls += 1;
         if (state.saveError) throw state.saveError;
@@ -50,6 +43,7 @@ vi.mock("./api", () => {
 });
 
 import { processJournalOperations } from "./journal-sync";
+import { ApiError } from "@lumine/api-contracts";
 
 function saveOperation(overrides: Record<string, unknown> = {}) {
   return {
@@ -102,5 +96,26 @@ describe("journal sync processor", () => {
     const result = await processJournalOperations("owner", { automatic: false });
 
     expect(result.operations[0]).toMatchObject({ status: "failed", retryable: true, attempts: 1 });
+  });
+
+  it("marks version conflicts as non-retryable and keeps them for attention", async () => {
+    state.operations = [saveOperation()];
+    state.saveError = new ApiError(409);
+
+    const result = await processJournalOperations("owner", { automatic: false });
+
+    expect(result.operations[0]).toMatchObject({ status: "conflict", retryable: false, attempts: 1 });
+  });
+
+  it("processes only the requested date", async () => {
+    state.operations = [
+      saveOperation(),
+      saveOperation({ id: "save:other", date: "2026-09-04" })
+    ];
+
+    const result = await processJournalOperations("owner", { automatic: false, date: "2026-09-04" });
+
+    expect(state.saveCalls).toBe(1);
+    expect(result.operations.map((operation) => operation.id)).toEqual(["save:2026-09-03"]);
   });
 });
