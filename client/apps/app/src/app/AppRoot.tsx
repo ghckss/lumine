@@ -2,10 +2,10 @@ import React, { useEffect, useState } from "react";
 import { SafeAreaView, StatusBar, StyleSheet } from "react-native";
 import { GuestMigrationDialog, ProfileSetupScreen, useSession, WelcomeScreen } from "../features/auth";
 import { SplashScreen } from "../components/SplashScreen";
-import { AppProvider, useApp } from "../context/AppContext";
-import { AppNavigator } from "../screens/native/AppNavigator";
+import { AppProvider } from "../context/AppContext";
 import { tokens } from "../shared/theme/tokens";
 import { initializeAuth } from "./bootstrap/initialize-auth";
+import { AppNavigator, useNavigation } from "./navigation";
 import { AppProviders } from "./providers/AppProviders";
 
 export function AppRoot() {
@@ -42,7 +42,7 @@ function AppGate() {
 }
 
 function AppExperience({ showGuestMigration, onRequestLogin }: { showGuestMigration: boolean; onRequestLogin: () => void }) {
-  const { navigate } = useApp();
+  const { navigate } = useNavigation();
 
   return (
     <>

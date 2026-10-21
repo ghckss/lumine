@@ -15,31 +15,27 @@ import {
   upsertJournalOperation,
   type JournalOperation
 } from "../storage/journal-operations";
+import { AppRouteScope, NavigationProvider, useNavigation } from "../app/navigation/NavigationProvider";
+import { STACK_TRANSITION_MS } from "../app/navigation/navigation-state";
 import { useSession } from "../features/auth/model/SessionProvider";
 import { enqueuePendingSync, removePendingJournal } from "../storage/pending-sync";
-import type { AppRoute, JournalRecord, PageName, ScreeningResult } from "../types/content";
+import type { JournalRecord, ScreeningResult } from "../types/content";
 
 const LEGACY_JOURNAL_CACHE_KEY = "native.journal.records";
 const LEGACY_SCREENING_CACHE_KEY = "native.screening.results";
-export const STACK_TRANSITION_MS = 280;
+export { AppRouteScope, STACK_TRANSITION_MS };
 
 type RecordsViewState = { selectedMonth: string; selectedDate: string | null };
 
 type AppContextValue = {
   isGuest: boolean;
   isLoading: boolean;
-  route: AppRoute;
-  stack: AppRoute[];
-  backTransitionKey: string | null;
   journalRecords: JournalRecord[];
   journalOwner: string;
   pendingJournalDeletion: { record: JournalRecord; expiresAt: string } | null;
   screeningResults: ScreeningResult[];
   recordsViewState: RecordsViewState;
   updateRecordsViewState: (next: Partial<RecordsViewState>) => void;
-  navigate: (page: PageName, params?: Record<string, unknown>) => void;
-  goBack: () => void;
-  resetTo: (page: PageName, params?: Record<string, unknown>) => void;
   saveJournal: (input: { date: string; emotions: string[]; body: string }) => Promise<JournalRecord>;
   loadJournalRange: (startDate: string, endDate: string) => Promise<void>;
   retryJournal: (date: string) => Promise<void>;
@@ -50,7 +46,6 @@ type AppContextValue = {
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
-const AppRouteContext = createContext<AppRoute | null>(null);
 
 export function AppProvider({ children, isGuest }: { children: React.ReactNode; isGuest: boolean }) {
   const { session, contentRevision } = useSession();
@@ -58,10 +53,6 @@ export function AppProvider({ children, isGuest }: { children: React.ReactNode; 
   const activeOwnerRef = useRef(cacheOwner);
   activeOwnerRef.current = cacheOwner;
   const [journalCacheKey, screeningCacheKey] = contentCacheKeys(cacheOwner);
-  const routeSequence = useRef(0);
-  const popTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [stack, setStack] = useState<AppRoute[]>([{ key: "route:0", page: "home" }]);
-  const [backTransitionKey, setBackTransitionKey] = useState<string | null>(null);
   const [journalRecords, setJournalRecords] = useState<JournalRecord[]>([]);
   const journalRecordsRef = useRef<JournalRecord[]>([]);
   const journalOperationsRef = useRef<JournalOperation[]>([]);
@@ -187,34 +178,6 @@ export function AppProvider({ children, isGuest }: { children: React.ReactNode; 
       .finally(() => { if (mounted) setIsLoading(false); });
     return () => { mounted = false; };
   }, [cacheOwner, contentRevision, journalCacheKey, screeningCacheKey, session]);
-
-  useEffect(() => () => {
-    if (popTimer.current) clearTimeout(popTimer.current);
-  }, []);
-
-  const createRoute = useCallback((page: PageName, params?: Record<string, unknown>): AppRoute => {
-    routeSequence.current += 1;
-    return { key: `route:${routeSequence.current}`, page, params };
-  }, []);
-
-  const navigate = useCallback((page: PageName, params?: Record<string, unknown>) => {
-    setStack((current) => [...current, createRoute(page, params)]);
-  }, [createRoute]);
-
-  const goBack = useCallback(() => {
-    if (stack.length <= 1 || backTransitionKey) return;
-    const leavingKey = stack[stack.length - 1].key;
-    setBackTransitionKey(leavingKey);
-    popTimer.current = setTimeout(() => {
-      setStack((current) => current[current.length - 1]?.key === leavingKey ? current.slice(0, -1) : current);
-      setBackTransitionKey(null);
-      popTimer.current = null;
-    }, STACK_TRANSITION_MS);
-  }, [backTransitionKey, stack]);
-
-  const resetTo = useCallback((page: PageName, params?: Record<string, unknown>) => {
-    setStack([createRoute(page, params)]);
-  }, [createRoute]);
 
   const runJournalSync = useCallback(async (options: { automatic: boolean; date?: string }) => {
     if (!session) return null;
@@ -430,37 +393,31 @@ export function AppProvider({ children, isGuest }: { children: React.ReactNode; 
     isLoading,
     journalOwner: cacheOwner,
     pendingJournalDeletion,
-    route: stack[stack.length - 1],
-    stack,
-    backTransitionKey,
     journalRecords,
     loadJournalRange,
     screeningResults,
     recordsViewState,
     updateRecordsViewState,
-    navigate,
-    goBack,
-    resetTo,
     saveJournal,
     retryJournal,
     deleteJournal,
     undoJournalDelete,
     saveScreening,
     clearContent
-  }), [backTransitionKey, cacheOwner, clearContent, deleteJournal, goBack, isGuest, isLoading, journalRecords, loadJournalRange, navigate, pendingJournalDeletion, recordsViewState, resetTo, retryJournal, saveJournal, saveScreening, screeningResults, stack, undoJournalDelete, updateRecordsViewState]);
+  }), [cacheOwner, clearContent, deleteJournal, isGuest, isLoading, journalRecords, loadJournalRange, pendingJournalDeletion, recordsViewState, retryJournal, saveJournal, saveScreening, screeningResults, undoJournalDelete, updateRecordsViewState]);
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+  return (
+    <AppContext.Provider value={value}>
+      <NavigationProvider>{children}</NavigationProvider>
+    </AppContext.Provider>
+  );
 }
 
 export function useApp() {
   const context = useContext(AppContext);
-  const scopedRoute = useContext(AppRouteContext);
+  const navigation = useNavigation();
   if (!context) throw new Error("useApp must be used within AppProvider");
-  return scopedRoute ? { ...context, route: scopedRoute } : context;
-}
-
-export function AppRouteScope({ route, children }: { route: AppRoute; children: React.ReactNode }) {
-  return <AppRouteContext.Provider value={route}>{children}</AppRouteContext.Provider>;
+  return { ...context, ...navigation };
 }
 
 function normalizeJournalRecord(record: JournalRecord, fallbackStatus: JournalRecord["syncStatus"]): JournalRecord {
