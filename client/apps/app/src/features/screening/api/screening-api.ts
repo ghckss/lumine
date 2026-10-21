@@ -1,4 +1,4 @@
-import type { ScreeningPayload } from "@lumine/api-contracts";
+import type { ScreeningHistoryItem, ScreeningPayload } from "@lumine/api-contracts";
 import type { ScreeningQuestionnaire, ScreeningResult } from "../model/screening";
 import { request } from "../../../shared/api/http-client";
 
@@ -13,12 +13,6 @@ export const screeningApi = {
     return request<ScreeningQuestionnaire>("/api/screening/questionnaire");
   },
   getScreeningHistory() {
-    return request<Array<{
-      completedDate: string;
-      publicSummary: string;
-      recommendedRescreenAt: string;
-      requiresSafetyPrompt: boolean;
-      comparisonScore?: number;
-    }>>("/api/screening/history");
+    return request<ScreeningHistoryItem[]>("/api/screening/history");
   }
 };

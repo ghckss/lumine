@@ -1,10 +1,16 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, Dimensions, Easing, Pressable, StyleSheet, Text, View } from "react-native";
 import { DiaryScreen, RecordDetailScreen, RecordsScreen, useJournal } from "../../features/journal";
+import {
+  CheckQuestionScreen,
+  CheckResultScreen,
+  CheckStartScreen,
+  type ScreeningQuestionnaire,
+  type ScreeningResult
+} from "../../features/screening";
 import { tokens } from "../../shared/theme/tokens";
 import { HomeScreen } from "../../screens/native/HomeScreen";
 import { MindReportScreen } from "../../screens/native/MindReportScreen";
-import { CheckQuestionScreen, CheckResultScreen, CheckStartScreen } from "../../screens/native/ScreeningScreens";
 import { DataManagementScreen, LegalScreen, MenuScreen, SafetyHelpScreen } from "../../screens/native/SupportAndSettingsScreens";
 import { AppRouteScope, useNavigation } from "./NavigationProvider";
 import { BottomTabs, TopBar } from "./NavigationChrome";
@@ -82,10 +88,24 @@ function renderScreen(route: AppRoute, onRequestLogin: () => void, actions: Rout
       />
     );
     case "mind-report": return <MindReportScreen />;
-    case "check-start": return <CheckStartScreen />;
-    case "check-question": return <CheckQuestionScreen />;
-    case "check-result": return <CheckResultScreen />;
-    case "safety-result": return <CheckResultScreen safety />;
+    case "check-start": return (
+      <CheckStartScreen
+        header={<TopBar showMenu />}
+        onStart={() => actions.navigate("check-question", { index: 0, answers: {} })}
+      />
+    );
+    case "check-question": return (
+      <CheckQuestionScreen
+        index={typeof route.params?.index === "number" ? route.params.index : 0}
+        previousAnswers={(route.params?.answers as Record<string, string> | undefined) ?? {}}
+        initialQuestionnaire={route.params?.questionnaire as ScreeningQuestionnaire | undefined}
+        header={<TopBar showMenu onBack={actions.goBack} />}
+        onNext={(progress) => actions.navigate("check-question", progress)}
+        onComplete={(result) => actions.navigate(result.requiresSafetyPrompt ? "safety-result" : "check-result", { result })}
+      />
+    );
+    case "check-result": return renderScreeningResult(false, route.params?.result as ScreeningResult | undefined, actions);
+    case "safety-result": return renderScreeningResult(true, route.params?.result as ScreeningResult | undefined, actions);
     case "safety-help": return <SafetyHelpScreen />;
     case "menu": return <MenuScreen onRequestLogin={onRequestLogin} />;
     case "data-management": return <DataManagementScreen />;
@@ -93,6 +113,23 @@ function renderScreen(route: AppRoute, onRequestLogin: () => void, actions: Rout
     case "privacy": return <LegalScreen type="privacy" />;
     default: return <HomeScreen />;
   }
+}
+
+function renderScreeningResult(safety: boolean, result: ScreeningResult | undefined, actions: RouteActions) {
+  const header = result
+    ? <TopBar title={safety ? "마음이 걱정돼요" : "마음 상태 결과"} showBack={false} showMenu />
+    : <TopBar title="마음 상태 결과" />;
+  return (
+    <CheckResultScreen
+      result={result}
+      safety={safety}
+      header={header}
+      onShowGeneralResult={(screeningResult) => actions.navigate("check-result", { result: screeningResult })}
+      onRequestSafetyHelp={() => actions.navigate("safety-help")}
+      onWriteJournal={() => actions.navigate("diary")}
+      onHome={() => actions.resetTo("home")}
+    />
+  );
 }
 
 function NavigationLayer({ children, mode, exiting, interactive }: { children: React.ReactNode; mode: "page" | "stack" | "background"; exiting: boolean; interactive: boolean }) {

@@ -5,6 +5,8 @@ export type ScreeningResult = SharedScreeningResult & {
   completedDate: string;
 };
 
+export type { ScreeningHistoryItem } from "@lumine/api-contracts";
+
 export type {
   ScreeningQuestion,
   ScreeningQuestionOption,

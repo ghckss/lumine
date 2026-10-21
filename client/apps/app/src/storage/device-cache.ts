@@ -1,5 +1,6 @@
 export * from "../shared/storage/device-cache";
-import { journalContentCacheKeys } from "../features/journal/storage/journal-cache";
+import { journalContentCacheKeys } from "../features/journal";
+import { screeningContentCacheKeys } from "../features/screening/storage/screening-cache";
 
 export {
   journalDraftsCacheKey,
@@ -10,5 +11,5 @@ export {
 /** @deprecated Compose feature-owned cache keys at the application boundary. */
 export function contentCacheKeys(owner: string) {
   const [records, drafts, operations] = journalContentCacheKeys(owner);
-  return [records, `native.screening.results.${owner}`, drafts, operations];
+  return [records, ...screeningContentCacheKeys(owner), drafts, operations];
 }

@@ -1,6 +1,7 @@
 import { accountApi } from "../../features/account/api/account-api";
 import { authApi } from "../../features/auth/api/auth-api";
 import { journalContentCacheKeys } from "../../features/journal";
+import { screeningContentCacheKeys } from "../../features/screening";
 import type { SessionServices } from "../../features/auth/model/session-lifecycle";
 import { loginWithNativeProvider, logoutFromNativeProvider } from "../../features/auth/services/native-auth-service";
 import { clearSession, loadSession, saveSession } from "../../features/auth/storage/session-storage";
@@ -23,7 +24,7 @@ export const sessionServices: SessionServices = {
   clearUserContent: async (userId) => {
     const keys = [
       ...journalContentCacheKeys(userId),
-      `native.screening.results.${userId}`
+      ...screeningContentCacheKeys(userId)
     ];
     await Promise.all(keys.map((key) => removeDeviceCache(key).catch(() => undefined)));
   },

@@ -12,4 +12,4 @@ export {
   type ScreeningQuestionOption,
   type ScreeningQuestionnaire,
   type ScreeningResult
-} from "../features/screening/model/screening";
+} from "../features/screening";

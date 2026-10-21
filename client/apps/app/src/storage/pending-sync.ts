@@ -1,4 +1,4 @@
-import { loadDeviceCache, removeDeviceCache, saveDeviceCache } from "./device-cache";
+import { loadDeviceCache, removeDeviceCache, saveDeviceCache } from "../shared/storage/device-cache";
 
 export const PENDING_SYNC_KEY = "sync.queue";
 
