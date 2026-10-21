@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildMindReport, getPeriodBoundaries } from "@lumine/domain";
-import type { JournalRecord, ScreeningResult } from "../types/content";
+import type { JournalRecord } from "../../journal/model/journal";
+import type { ScreeningResult } from "../../screening/model/screening";
 
 function journal(date: string, emotions: string[]): JournalRecord {
   return {

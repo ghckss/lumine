@@ -4,7 +4,7 @@ import NetInfo from "@react-native-community/netinfo";
 import { createComfortMessage, localIsoDate, monthRange, replaceJournalRange } from "@lumine/domain";
 import { useSession } from "../../auth";
 import { loadDeviceCache, removeDeviceCache, saveDeviceCache } from "../../../shared/storage/device-cache";
-import { enqueuePendingSync, removePendingJournal } from "../../../storage/pending-sync";
+import { enqueuePendingSync, removePendingJournal } from "../../../shared/storage/pending-sync";
 import { journalApi, toJournalRecord } from "../api/journal-api";
 import { processJournalOperations, type JournalSyncResult } from "../services/journal-sync";
 import { removeJournalDraft } from "../storage/journal-drafts";

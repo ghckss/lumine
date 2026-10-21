@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useSession } from "../../auth";
 import { loadDeviceCache, removeDeviceCache, saveDeviceCache } from "../../../shared/storage/device-cache";
-import { enqueuePendingSync } from "../../../storage/pending-sync";
+import { enqueuePendingSync } from "../../../shared/storage/pending-sync";
 import { screeningApi } from "../api/screening-api";
 import {
   LEGACY_SCREENING_RESULTS_CACHE_KEY,

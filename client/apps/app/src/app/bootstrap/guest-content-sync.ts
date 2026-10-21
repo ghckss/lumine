@@ -1,6 +1,6 @@
-import { api } from "./api";
 import { reconcilePendingSync } from "@lumine/api-contracts";
-import { loadPendingSyncQueue, savePendingSyncQueue } from "../storage/pending-sync";
+import { accountApi } from "../../features/account/api/account-api";
+import { loadPendingSyncQueue, savePendingSyncQueue } from "../../shared/storage/pending-sync";
 
 export async function syncGuestContentToServer() {
   const queue = await loadPendingSyncQueue();
@@ -8,7 +8,7 @@ export async function syncGuestContentToServer() {
     return { totalCount: 0, syncedCount: 0, conflictCount: 0, failedCount: 0, remainingCount: 0 };
   }
 
-  const response = await api.importGuestContent(queue.map((item) => {
+  const response = await accountApi.importGuestContent(queue.map((item) => {
     if (item.type === "journal") {
       return { id: item.id, type: "JOURNAL" as const, journal: item.payload };
     }

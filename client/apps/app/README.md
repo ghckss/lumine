@@ -12,7 +12,7 @@ Lumine의 전체 사용자 경험을 제공하는 React Native 앱입니다. Web
 - 안전 도움과 긴급전화 연결
 - 메뉴 / 이용약관 / 개인정보처리방침
 
-앱 내 화면 전환은 `src/screens/native/AppNavigator.tsx`, 사용자 콘텐츠 상태와 로컬 캐시는 `src/context/AppContext.tsx`에서 관리합니다.
+앱 내 화면 전환은 `src/app/navigation/AppNavigator.tsx`에서 관리합니다. 사용자 콘텐츠 상태는 `src/features/journal`과 `src/features/screening`, 공통 기기 저장소는 `src/shared/storage`에 있습니다.
 
 회원 데이터는 Kotlin API 서버에 저장하고 기기에 함께 캐시합니다. 게스트 데이터는 보안 기기 저장소에 보관하며, 로그인하면 동기화 대기 항목을 서버로 전송합니다.
 
@@ -31,7 +31,7 @@ iOS 최초 실행 시 `bundle exec pod install`이 필요합니다.
 
 카카오와 Google SDK 설정은 다음 위치에서 관리합니다.
 
-- `src/config/auth.ts`
+- `src/shared/config/auth.ts`
 - `ios/LumineNativeShell/Info.plist`
 - `android/app/src/main/res/values/strings.xml`
 
@@ -39,4 +39,4 @@ iOS 최초 실행 시 `bundle exec pod install`이 필요합니다.
 
 ## API
 
-iOS 시뮬레이터는 `localhost:8080`, Android 에뮬레이터는 `10.0.2.2:8080`을 사용합니다. Release 번들은 빌드 시 `LUMINE_API_BASE_URL` 환경변수에 HTTPS 주소가 있어야 하며, GitHub Actions에서는 같은 이름의 Repository Variable을 사용합니다. 설정은 `src/config/env.ts`에 있습니다.
+iOS 시뮬레이터는 `localhost:8080`, Android 에뮬레이터는 `10.0.2.2:8080`을 사용합니다. Release 번들은 빌드 시 `LUMINE_API_BASE_URL` 환경변수에 HTTPS 주소가 있어야 하며, GitHub Actions에서는 같은 이름의 Repository Variable을 사용합니다. 설정은 `src/shared/config/env.ts`에 있습니다.

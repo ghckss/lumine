@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { reconcilePendingSync } from "@lumine/api-contracts";
-import type { PendingSyncItem } from "../storage/pending-sync";
+import type { PendingSyncItem } from "../../shared/storage/pending-sync";
 
 describe("reconcilePendingSync", () => {
   it("removes imported items and preserves conflict and failed items", () => {
