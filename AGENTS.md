@@ -53,7 +53,7 @@ Choose validation proportional to the changed area. Shared-package or API-contra
 ## Infrastructure and generated files
 
 - Treat Flyway migrations as append-only once committed; do not rewrite production migration history.
-- Keep Terraform state, local `.env*`, signing files, and generated build output untracked.
+- Keep Terraform state, local `.env*`, production signing credentials/artifacts, and generated build output untracked. The repository intentionally tracks the standard Android `debug.keystore`; never replace it with release credentials.
 - Validate Terraform with `terraform fmt -check -recursive` and `terraform validate` from `infra/aws` after initialization.
 - Validate Kubernetes manifests with `kubectl kustomize infra/k8s/base` and `kubectl kustomize infra/k8s/overlays/production`.
 - Do not hand-edit lockfiles, generated native build output, `.next`, `.turbo`, Gradle caches, or `node_modules`.
