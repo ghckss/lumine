@@ -12,7 +12,7 @@ Lumine은 Kubernetes 요구를 유지하면서 운영 부담을 줄이기 위해
 - GitHub Actions OIDC: 장기 액세스 키 없이 server와 web을 독립 배포
 - ACM: ALB의 HTTPS 인증서
 
-React Native 앱은 Kubernetes에 실행하는 서비스가 아니므로 기존 Android/iOS 아티팩트 파이프라인을 유지한다. 앱은 EKS의 공개 HTTPS 주소를 API URL로 사용한다.
+React Native 앱은 Kubernetes에 실행하는 서비스가 아니므로 Android/iOS 아티팩트 파이프라인을 별도로 유지한다. 서명 credential과 production API URL이 준비된 release 작업이므로 `.github/workflows/mobile-artifacts.yml`은 `workflow_dispatch`로만 수동 실행한다. 앱은 EKS의 공개 HTTPS 주소를 API URL로 사용한다.
 
 ## 왜 EKS Auto Mode인가
 
@@ -126,7 +126,7 @@ kubectl -n lumine get pods,deployments,services,ingress
 
 - `server/**` 변경: 서버 테스트 → 서버 이미지 빌드 → ECR push → 서버 Deployment 롤링 업데이트
 - `client/apps/web/**` 또는 `client/packages/domain/**` 변경: 웹 검사 → 웹 이미지 빌드 → ECR push → 웹 Deployment 롤링 업데이트
-- 앱은 기존 Android/iOS 아티팩트 워크플로로 별도 관리
+- 앱은 Android/iOS 아티팩트 워크플로를 필요할 때 수동 실행해 별도 관리
 
 이미지는 Git commit SHA와 workflow 재시도 번호를 결합한 불변 태그를 사용한다. 롤백할 때 이전 이미지 태그를 지정한다.
 
